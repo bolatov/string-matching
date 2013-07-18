@@ -1,4 +1,4 @@
-package de.saarland;
+package de.saarland.util;
 
 /**
  * @author almer

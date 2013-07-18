@@ -1,1 +1,14 @@
-If a word appears in the dictionary.
+Trie structure that keeps a dictionary of words.
+
+Supports
+ - adding new words
+ - look up queries
+    - exact queries                 IMPLEMENTED
+    - wildcards in the pattern      PARTIALLY IMPLEMENTED, need to fix some bugs
+
+[2013-07-18] - Added test cases for exact matching and wildcards in the pattern (k=5).
+             - JUnit test cases (TestExactMatching, TestWildcardsInThePattern)
+
+TODO;
+    - Fix answering query where k=5 and query='*****'.
+    - Add support for wildcards in the text.

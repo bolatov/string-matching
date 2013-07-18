@@ -1,4 +1,6 @@
-package de.saarland;
+package de.saarland.trie;
+
+import de.saarland.util.Pair;
 
 import java.util.*;
 
@@ -12,8 +14,6 @@ public class Trie {
     // helper buffer to convert Strings to char arrays
     private char[] charBuffer = new char[0];
 
-    private boolean supportsWildcards = false;
-
     public Trie() {
         this.root = new Node();
     }
@@ -26,7 +26,7 @@ public class Trie {
      * Classify nodes as heavy or light.
      * Heavy path decomposition.
      */
-    public void decompose(Node startNode) {
+    private void decompose(Node startNode) {
         countWeights(startNode);
 
         Queue<Node> queue = new LinkedList<Node>();
@@ -89,7 +89,8 @@ public class Trie {
                     Node newNode = new Node();
                     char c = key.charAt(i);
 //                    node.addChild(Character.toUpperCase(c), newNode);
-                    node.addChild(Character.toLowerCase(c), newNode);
+//                    node.addChild(Character.toLowerCase(c), newNode);
+                    node.addChild(c, newNode);
                     node = newNode;
                 }
                 break;
@@ -127,14 +128,16 @@ public class Trie {
             Node node = pair.getFirst();
             int depth = pair.getSecond();
             int nextDepth = depth + 1;
-            if (depth == charBuffer.length && node.isLeaf()) {
+            if (depth == len && node.isLeaf()) {
                 result.addAll(node.getValues());
             } else {
                 Character ch = charBuffer[depth];
-                if (ch == WILDCARD && supportsWildcards) {
+                if (ch == WILDCARD) {
                     Node heavyChild = node.getHeavyChild();
-                    Pair<Node, Integer> heavyPair = new Pair<Node, Integer>(heavyChild, nextDepth);
-                    queue.add(heavyPair);
+                    if (heavyChild != null) {
+                        Pair<Node, Integer> heavyPair = new Pair<Node, Integer>(heavyChild, nextDepth);
+                        queue.add(heavyPair);
+                    }
                 }
                 Node child = node.getChild(ch);
                 if (child != null) {
@@ -179,33 +182,23 @@ public class Trie {
                 queue.add(heavyChildPair);
 
                 List<Node> lightChildren = node.getLightChildren();
-                List<Pair<String, Set<Integer>>> lightWords = new ArrayList<Pair<String, Set<Integer>>>();
+                Node wildcardNode = new Node();
+                node.addChild(WILDCARD, wildcardNode);
+
                 for (Node lightChild : lightChildren) {
+                    // TODO add these light children to a new wildcard subtree
 
-                    // extract words and values hanging
-                    // from this node
-                    extractWords(lightChild, "", lightWords);
-
+                    // for BFS traversal
                     Pair lightChildPair = new Pair(lightChild, j);
                     queue.add(lightChildPair);
                 }
-
-                Node wildcardNode = new Node();
-                for (Pair<String, Set<Integer>> pair : lightWords) {
-                    String word = pair.getFirst();
-                    Set<Integer> values = pair.getSecond();
-                    addWord(word, values, wildcardNode);
-                }
                 decompose(wildcardNode);
-
-                node.addChild(WILDCARD, wildcardNode);
 
                 // for BFS traversal
                 Pair wildcardChildPair = new Pair(wildcardNode, new Integer(j - 1));
                 queue.add(wildcardChildPair);
             }
         }
-        this.supportsWildcards = true;
     }
 
     /**
