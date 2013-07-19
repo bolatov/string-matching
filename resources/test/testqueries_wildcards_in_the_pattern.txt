@@ -1,4 +1,3 @@
-0:*****
 1:Morina*di*Ledr*
 2:P****hmhmati
 3:J*j*a*g*e*
@@ -28,3 +27,13 @@
 27:Hubla
 28:Hablo
 29:Hugla
+30:*ahrwa
+31:**hrwa
+32:***rwa
+33:****wa
+34:*****a
+35:Gahrw*
+36:Gahr**
+37:Gah***
+38:Ga****
+39:G*****

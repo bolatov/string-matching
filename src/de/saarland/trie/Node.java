@@ -10,7 +10,7 @@ public class Node {
 
     // Children of this node.
 //    private final Node children[];
-    private final Map<Character, Node> children;
+    private Map<Character, Node> children;
 
     // Values to store on the leaf nodes
     private Set<Integer> values;
@@ -32,6 +32,8 @@ public class Node {
     }
 
     public void addChild(Character c, Node node) {
+        if (children.containsKey(c))
+            System.out.println(String.format("Node already contains character %c", c));
         children.put(c, node);
     }
 
@@ -49,7 +51,7 @@ public class Node {
      * Returns children array with,
      * possibly with null values inside.
      *
-     * @return
+     * @return children of this node
      */
     public Map<Character, Node> getChildren() {
         return children;
@@ -59,9 +61,9 @@ public class Node {
         return children.get(heavyChildPointer);
     }
 
-    public Character getHeavyChildPointer() {
-        return heavyChildPointer;
-    }
+//    public Character getHeavyChildPointer() {
+//        return heavyChildPointer;
+//    }
 
     public void setHeavyChildPointer(Character pointer) {
         this.heavyChildPointer = pointer;
@@ -90,4 +92,21 @@ public class Node {
         this.weight = weight;
     }
 
+    /**
+     * Creates a deep copy of itself
+     *
+     * @return a deep copy of itself
+     */
+    public Node deepCopy() {
+        Node result = new Node();
+
+        for (Character key : children.keySet()) {
+            Node child = children.get(key).deepCopy();
+            result.addChild(key, child);
+
+        }
+        result.getValues().addAll(values);
+
+        return result;
+    }
 }

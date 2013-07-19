@@ -24,8 +24,14 @@ public class TestCaseFactory {
     public final static String WILDCARDS_IN_THE_PATTERN_TEST_QUERIES_PATH = "resources/test/testqueries_wildcards_in_the_pattern.txt";
     public final static String WILDCARDS_IN_THE_PATTERN_TEST_ANSWERS_PATH = "resources/test/testanswers_wildcards_in_the_pattern.txt";
 
+    // light
+    public final static String LIGHT_TEST_DATA_PATH = "resources/test/testdata_light.txt";
+    public final static String LIGHT_TEST_QUERIES_PATH = "resources/test/testqueries_light.txt";
+    public final static String LIGHT_TEST_ANSWERS_PATH = "resources/test/testanswers_light.txt";
+
     /**
      * Test data for Exact Matching.
+     *
      * @return hash map with <WordId, Word> key-value pairs
      */
     public static Map<Integer, String> getTestData(String testDataPath) {
@@ -35,7 +41,7 @@ public class TestCaseFactory {
         int wordColumn = 1;
 
         BufferedReader reader = null;
-        String line = "";
+        String line;
         String delimiter = ",";
         try {
             reader = new BufferedReader(new FileReader(testDataPath));
@@ -63,6 +69,7 @@ public class TestCaseFactory {
 
     /**
      * Test queries for Exact Matching.
+     *
      * @return hash map with <QueryId, Query> key-value pairs
      */
     public static Map<Integer, String> getTestQueries(String testQueriesPath) {
@@ -72,10 +79,10 @@ public class TestCaseFactory {
         int queryColumn = 1;
 
         BufferedReader reader = null;
-        String line = "";
+        String line;
         String delimiter = ":";
         try {
-        reader = new BufferedReader(new FileReader(testQueriesPath));
+            reader = new BufferedReader(new FileReader(testQueriesPath));
             while ((line = reader.readLine()) != null) {
                 String[] columns = line.split(delimiter);
                 Integer queryId = Integer.parseInt(columns[queryIdColumn]);
@@ -100,6 +107,7 @@ public class TestCaseFactory {
 
     /**
      * Test answers for Exact Matching Queries.
+     *
      * @return hash map with <QueryId, Set<Answer>>
      */
     public static Map<Integer, Set<Integer>> getTestQueryAnswers(String queryAnswersPath) {
@@ -109,7 +117,7 @@ public class TestCaseFactory {
         int queryAnswersColumn = 1;
 
         BufferedReader reader = null;
-        String line = "";
+        String line;
         String queryAnswersDelimiter = ":";
         String answersDelimiter = ",";
         try {

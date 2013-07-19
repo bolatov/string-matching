@@ -128,7 +128,7 @@ public class Trie {
             Node node = pair.getFirst();
             int depth = pair.getSecond();
             int nextDepth = depth + 1;
-            if (depth == len && node.isLeaf()) {
+            if (depth == len) {
                 result.addAll(node.getValues());
             } else {
                 Character ch = charBuffer[depth];
@@ -167,66 +167,89 @@ public class Trie {
         }
 
         // traverse the tree in BFS-manner
-        Queue queue = new LinkedList();
-        Pair rootPair = new Pair(getRoot(), k);
+        Queue<Pair<Node, Integer>> queue = new LinkedList<Pair<Node, Integer>>();
+        Pair<Node, Integer> rootPair = new Pair<Node, Integer>(getRoot(), k);
         queue.add(rootPair);
 
         while (!queue.isEmpty()) {
-            Pair<Node, Integer> p = (Pair) queue.remove();
+            Pair<Node, Integer> p = queue.remove();
             Node node = p.getFirst();
             int j = p.getSecond();  // j<=k
 
             if (j > 0 && !node.isLeaf()) {
                 // add heavy child for the next traversal level
-                Pair heavyChildPair = new Pair(node.getHeavyChild(), j);
+                Pair<Node, Integer> heavyChildPair = new Pair<Node, Integer>(node.getHeavyChild(), j);
                 queue.add(heavyChildPair);
 
                 List<Node> lightChildren = node.getLightChildren();
-                Node wildcardNode = new Node();
-                node.addChild(WILDCARD, wildcardNode);
+                if (!lightChildren.isEmpty()) {
+                    Node wildcardNode = new Node();
+                    node.addChild(WILDCARD, wildcardNode);
 
-                for (Node lightChild : lightChildren) {
-                    // TODO add these light children to a new wildcard subtree
+                    for (Node lightChild : lightChildren) {
+                        // TODO add these light children to a new wildcard subtree
+                        mergeNodes(lightChild, wildcardNode);
+
+                        // for BFS traversal
+                        Pair<Node, Integer> lightChildPair = new Pair<Node, Integer>(lightChild, j);
+                        queue.add(lightChildPair);
+                    }
+                    decompose(wildcardNode);
 
                     // for BFS traversal
-                    Pair lightChildPair = new Pair(lightChild, j);
-                    queue.add(lightChildPair);
+                    Pair<Node, Integer> wildcardChildPair = new Pair<Node, Integer>(wildcardNode, j - 1);
+                    queue.add(wildcardChildPair);
                 }
-                decompose(wildcardNode);
-
-                // for BFS traversal
-                Pair wildcardChildPair = new Pair(wildcardNode, new Integer(j - 1));
-                queue.add(wildcardChildPair);
             }
         }
     }
 
     /**
-     * Extract suffixes hanging from the node
-     * and store to the bag.
+     * Copies subtrees from one node to another.
      *
-     * @param node
-     * @param prefix
-     * @param bag
+     * @param from source node
+     * @param to   destination node
      */
-    private void extractWords(Node node, String prefix, List<Pair<String, Set<Integer>>> bag) {
-        // Recursively traverse a subtree hanging from the node
-        // in a DFS manner by appending characters to the prefix string.
-        // Add the word to the bag if leaf is reached.
-        if (node.isLeaf()) { // && !"".equals(prefix)) {
-            Set<Integer> values = node.getValues();
-            Pair<String, Set<Integer>> pair = new Pair<String, Set<Integer>>();
-            pair.setFirst(prefix);
-            pair.setSecond(values);
-            bag.add(pair);
-            return;
+    private void mergeNodes(Node from, Node to) {
+        final Map<Character, Node> fromChildren = from.getChildren();
+        Map<Character, Node> toChildren = to.getChildren();
+        for (Character key : fromChildren.keySet()) {
+            Node fromChild = fromChildren.get(key);
+            if (!toChildren.containsKey(key)) {
+                to.addChild(key, fromChild.deepCopy());
+            } else {
+                mergeNodes(fromChild, to.getChild(key));
+            }
         }
-        Map<Character, Node> children = node.getChildren();
-        for (Character ch : children.keySet()) {
-            Node child = children.get(ch);
-            extractWords(child, prefix + ch, bag);
-        }
+        to.getValues().addAll(from.getValues());
     }
+
+//    /**
+//     * Extract suffixes hanging from the node
+//     * and store to the bag.
+//     *
+//     * @param node   root of subtree
+//     * @param prefix recursively appends characters to this prefix
+//     * @param bag    to collect word->wordId value pairs
+//     */
+//    private void extractWords(Node node, String prefix, List<Pair<String, Set<Integer>>> bag) {
+//        // Recursively traverse a subtree hanging from the node
+//        // in a DFS manner by appending characters to the prefix string.
+//        // Add the word to the bag if leaf is reached.
+//        if (node.isLeaf()) { // && !"".equals(prefix)) {
+//            Set<Integer> values = node.getValues();
+//            Pair<String, Set<Integer>> pair = new Pair<String, Set<Integer>>();
+//            pair.setFirst(prefix);
+//            pair.setSecond(values);
+//            bag.add(pair);
+//            return;
+//        }
+//        Map<Character, Node> children = node.getChildren();
+//        for (Character ch : children.keySet()) {
+//            Node child = children.get(ch);
+//            extractWords(child, prefix + ch, bag);
+//        }
+//    }
 
     /**
      * Set appropriate weights to the nodes

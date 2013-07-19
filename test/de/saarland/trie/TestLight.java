@@ -11,23 +11,22 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Almer Bolatov
- *         18.07.13, 11:38
+ *         7/18/13, 6:06 PM
  */
-public class TestWildcardsInThePattern {
+public class TestLight {
     private Trie trie;
     private Map<Integer, String> testData;
     private Map<Integer, String> queries;
     private Map<Integer, Set<Integer>> answers;
 
-    // number of wildcards to support
-    private int k = 5;
+    private int k = 3;
 
     @Before
     public void setUp() throws Exception {
         trie = new Trie();
-        testData = TestCaseFactory.getTestData(TestCaseFactory.WILDCARDS_IN_THE_PATTERN_TEST_DATA_PATH);
-        queries = TestCaseFactory.getTestQueries(TestCaseFactory.WILDCARDS_IN_THE_PATTERN_TEST_QUERIES_PATH);
-        answers = TestCaseFactory.getTestQueryAnswers(TestCaseFactory.WILDCARDS_IN_THE_PATTERN_TEST_ANSWERS_PATH);
+        testData = TestCaseFactory.getTestData(TestCaseFactory.LIGHT_TEST_DATA_PATH);
+        queries = TestCaseFactory.getTestQueries(TestCaseFactory.LIGHT_TEST_QUERIES_PATH);
+        answers = TestCaseFactory.getTestQueryAnswers(TestCaseFactory.LIGHT_TEST_ANSWERS_PATH);
 
         for (Integer testWordId : testData.keySet()) {
             String word = testData.get(testWordId);
@@ -43,10 +42,9 @@ public class TestWildcardsInThePattern {
             Set<Integer> trieAnswers = trie.lookUp(query);
 
             Set<Integer> queryAnswers = answers.get(queryId);
-
             boolean isSuccess = trieAnswers.containsAll(queryAnswers);
             if (!isSuccess) {
-                System.out.println(String.format("Query %d FAILED.", queryId));
+                System.err.println(String.format("Query %d FAILED.", queryId));
             }
             assertTrue(isSuccess);
         }

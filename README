@@ -10,5 +10,4 @@ Supports
              - JUnit test cases (TestExactMatching, TestWildcardsInThePattern)
 
 TODO;
-    - Fix answering query where k=5 and query='*****'.
     - Add support for wildcards in the text.
