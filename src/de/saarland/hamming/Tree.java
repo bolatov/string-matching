@@ -262,7 +262,31 @@ public class Tree {
 	public static Tree merge(Tree iTree, Tree jTree) {
 		Tree mergedTree = new Tree();
 
-		// TODO Implement
+		Map<Character, Tree> iChildren = iTree.getChildren();
+		Map<Character, Tree> jChildren = jTree.getChildren();
+
+		Set<Character> keys = new HashSet<>();
+		keys.addAll(iChildren.keySet());
+		keys.addAll(jChildren.keySet());
+
+		for (Character key : keys) {
+			if (iChildren.containsKey(key) && jChildren.containsKey(key)) {
+				Tree iSubTree = iChildren.get(key);
+				Tree jSubTree = jChildren.get(key);
+				mergedTree.addChild(key, Tree.merge(iSubTree, jSubTree));
+			} else if (!iChildren.containsKey(key)) {
+				Tree jSubTree = jChildren.get(key).deepCopy();
+				mergedTree.addChild(key, jSubTree);
+			} else {
+				Tree iSubTree = iChildren.get(key).deepCopy();
+				mergedTree.addChild(key, iSubTree);
+			}
+		}
+
+		Set<Integer> values = new HashSet<>();
+		values.addAll(iTree.getValues());
+		values.addAll(jTree.getValues());
+		mergedTree.getValues().addAll(values);
 
 		return mergedTree;
 	}
