@@ -29,6 +29,13 @@ public class TestCaseFactory {
     public final static String LIGHT_TEST_QUERIES_PATH = "resources/test/testqueries_light.txt";
     public final static String LIGHT_TEST_ANSWERS_PATH = "resources/test/testanswers_light.txt";
 
+    // hamming distance
+    public final static String HAMMING_DISTANCE_TEST_DATA_PATH = "resources/test/testdata_hamming_distance.txt";
+    public final static String HAMMING_DISTANCE_TEST_QUERIES_PATH = "resources/test/testqueries_hamming_distance.txt";
+    public final static String HAMMING_DISTANCE_TEST_ANSWERS_PATH = "resources/test/testanswers_hamming_distance.txt";
+
+
+
     /**
      * Test data for Exact Matching.
      *
