@@ -194,4 +194,10 @@ public class TestTreeMerge {
 		int acd = merge.getChild('a').getChild('c').getChild('d').getValues().size();
 		assertEquals(acd, 2);
 	}
+
+	@Test
+	public void testPreserveHeavyPathDecomposition() {
+		// TODO Implement
+		assertTrue(true);
+	}
 }

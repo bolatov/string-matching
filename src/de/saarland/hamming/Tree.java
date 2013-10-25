@@ -17,7 +17,7 @@ import java.util.*;
 public class Tree {
 	private Map<Character, Tree> children;
 
-	private Tree heavyChild;
+//	private Tree heavyChild;
 
 	private int heavyPathId;
 
@@ -26,6 +26,8 @@ public class Tree {
 	private Set<Integer> values;
 
 	private int weight = 1;
+
+	private String id;
 
 	/**
 	 * Constructor
@@ -68,6 +70,8 @@ public class Tree {
 	}
 
 	public void buildMismatchesIndex(int k) {
+		System.out.printf("buildMismatchesIndex(): k = %d%n", k);
+
 		if (k <= 0) {
 			return;
 		}
@@ -99,40 +103,70 @@ public class Tree {
 						mergedChildren = Tree.merge(mergedChildren, subTree);
 
 						// for BFS traversal
-						heavyPathHeads.add(subTree);
+						if (!subTree.isLeaf())
+							heavyPathHeads.add(subTree);
 
 //						System.out.printf("  ch = %s%n", childPointer.toString());
 					}
 				}
 
-				Tree leaf = errorTree.getAnyLeaf();
+				if (mergedChildren.getChildren().isEmpty()) {
+					System.out.printf("\t mergedChildren is an empty node!%n");
+				} else {
+					System.out.println("\t is OK%n");
+				}
 
-				leaf.addChild(current.getHeavyChildPointer(), mergedChildren);
-				errorTrees.add(errorTree);
+				// for the next(v_i)
+				Tree nextErrorTree = errorTree.deepCopy();
+				Tree nextLeaf = nextErrorTree.getAnyLeaf();
+				nextLeaf.addChild(current.getHeavyChildPointer(), new Tree());
 
-				// new Tree (with new hashCode id) for the next level
-				errorTree = errorTree.deepCopy();
+				Tree currentErrorTree = errorTree.deepCopy();
+				Tree currentLeaf = currentErrorTree.getAnyLeaf();
+				currentLeaf.addChild(current.getHeavyChildPointer(), mergedChildren);
+				errorTrees.add(currentErrorTree);
+
+				errorTree = nextErrorTree;
+
+//				Tree leaf = errorTree.getAnyLeaf();
+//
+//				leaf.addChild(current.getHeavyChildPointer(), mergedChildren);
+//				errorTrees.add(errorTree);
+//
+//				// new Tree (with new hashCode id) for the next level
+//				errorTree = errorTree.deepCopy();
+
+
+			}
+
+			if (errorTrees.isEmpty()) {
+				System.out.println("No Error Trees gathered");
+				continue;
 			}
 
 			GroupTree groupTree = GroupTree.buildGroupTrees(errorTrees);
 			GroupTreeStorage.getInstance().addGroupTree(t.hashCode(), groupTree);
 
 			// build k-1 mismatches index on built group trees
-//			if (k-1 > 0) {
-//				Queue<GroupTree> groupTreesQueue = new LinkedList();
-//				groupTreesQueue.add(groupTree);
-//
-//				while (!groupTreesQueue.isEmpty()) {
-//					System.out.println(" --innerWhile");
-//					GroupTree gTree = groupTreesQueue.remove();
-//					gTree.getTree().buildMismatchesIndex(k - 1);
-//
-//					GroupTree leftChildGroupTree  = gTree.getLeftChild();
-//					GroupTree rightChildGroupTree = gTree.getRightChild();
-//					groupTreesQueue.add(leftChildGroupTree);
-//					groupTreesQueue.add(rightChildGroupTree);
-//				}
-//			}
+			if (k-1 > 0) {
+				Queue<GroupTree> groupTreesQueue = new LinkedList();
+				groupTreesQueue.add(groupTree);
+
+				while (!groupTreesQueue.isEmpty()) {
+					System.out.println(" --innerWhile");
+					GroupTree gTree = groupTreesQueue.remove();
+					gTree.getTree().buildMismatchesIndex(k - 1);
+
+					GroupTree leftChildGroupTree  = gTree.getLeftChild();
+					GroupTree rightChildGroupTree = gTree.getRightChild();
+
+					if (leftChildGroupTree != null)
+						groupTreesQueue.add(leftChildGroupTree);
+
+					if (rightChildGroupTree != null)
+						groupTreesQueue.add(rightChildGroupTree);
+				}
+			}
 		}
 
 	}
@@ -302,8 +336,24 @@ public class Tree {
 			result.addChild(key, child);
 
 		}
+
+		// preserve values
 		result.getValues().addAll(values);
 
+		// preserve weights
+		result.setWeight(weight);
+
+		// preserve heavy path decomposition
+		result.setHeavyChildPointer(heavyChildPointer);
+
 		return result;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 }
