@@ -14,6 +14,7 @@ import java.util.*;
  * 2. add words one by one, instead of reading all and then passing
  *      to the trie.
  */
+@Deprecated
 public class Tree {
 	private Map<Character, Tree> children;
 

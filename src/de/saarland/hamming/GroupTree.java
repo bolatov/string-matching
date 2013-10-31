@@ -7,6 +7,7 @@ import java.util.List;
  *         Date: 10/12/13
  *         Time: 1:38 PM
  */
+@Deprecated
 public class GroupTree {
 	private GroupTree leftChild;
 	private GroupTree rightChild;

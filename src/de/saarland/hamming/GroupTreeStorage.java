@@ -8,6 +8,7 @@ import java.util.Map;
  *         Date: 10/16/13
  *         Time: 1:50 AM
  */
+@Deprecated
 public class GroupTreeStorage {
 	private static GroupTreeStorage instance;
 

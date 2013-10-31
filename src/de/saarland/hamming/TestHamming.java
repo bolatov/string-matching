@@ -1,5 +1,8 @@
 package de.saarland.hamming;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Almer Bolatov
  *         Date: 10/16/13
@@ -7,18 +10,22 @@ package de.saarland.hamming;
  */
 public class TestHamming {
 	public static void main(String[] args) {
-		Tree tree = new Tree();
-		tree.addWord("far", 1);
-		tree.addWord("fat", 2);
-		tree.addWord("fit", 3);
-		tree.addWord("pay", 4);
-		tree.addWord("pin", 5);
-		tree.addWord("sit", 6);
+		List<String> strings = new ArrayList<>();
 
-		tree.buildMismatchesIndex(1);
+		strings.add("far");
+		strings.add("fat");
+		strings.add("fit");
+		strings.add("pay");
+		strings.add("pin");
+		strings.add("sit");
 
-		GroupTreeStorage storage = GroupTreeStorage.getInstance();
+		Trie trie = new Trie(strings);
+		trie.buildMismatchesIndex(1);
 
+		System.out.println("Query for word 'far' with k=0");
+		for (int i : trie.search("far", 0)) {
+			System.out.println("matches to " + strings.get(i));
+		}
 		System.out.println("Test end");
 
 //		List<Tree> list = new ArrayList<>();
