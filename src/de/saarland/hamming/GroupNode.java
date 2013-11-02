@@ -1,5 +1,7 @@
 package de.saarland.hamming;
 
+import de.saarland.util.Logger;
+
 import java.util.List;
 import java.util.Set;
 
@@ -17,20 +19,51 @@ public abstract class GroupNode {
 	protected GroupNode parent;
 	protected GroupNode node;
 
-
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
 		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
 
 		// TODO IMPLEMENT
+//		if (errorTrees.size() == 0) {
+//			System.err.println("No error trees in the list.");
+//			return null;
+//		} else if (errorTrees.size() == 1) {
+//			GroupTree groupTree = new GroupTree();
+//			groupTree.setTree(errorTrees.get(0));
+//			return groupTree;
+//		}
 
-		return null;
+		return build(groupNodes, 0, groupNodes.size() - 1);
 	}
 
-	private static GroupNode build(List<GroupNode> groupNodes, int pIndex, int qIndex) {
-		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", pIndex, qIndex));
+	private static GroupNode build(List<GroupNode> groupNodes, int p, int r) {
+		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", p, r));
 
 		// TODO IMPLEMENT
+//		if (p < r) {
+//			GroupTree result =  new GroupTree();
+//
+//			int q = (p + r) / 2;
+//			GroupNode left = build(groupNodes, p, q);
+//			GroupNode right = build(groupNodes, q + 1, r);
+//
+//			left.setParent(result);
+//			right.setParent(result);
+//
+//			result.setLeftChild(left);
+//			result.setRightChild(right);
+//
+//			Tree merged = Tree.merge(left.getTree(), right.getTree());
+//			merged.setId(left.getTree().getId() + right.getTree().getId());
+//			result.setTree(merged);
+//
+//			return result;
 
+//		} else {
+//			GroupNode result = new G();
+//			result.setTree(errorTrees.get(p));
+//
+//			return result;
+//		}
 		return null;
 	}
 

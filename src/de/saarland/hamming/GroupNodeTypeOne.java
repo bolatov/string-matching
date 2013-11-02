@@ -1,5 +1,7 @@
 package de.saarland.hamming;
 
+import de.saarland.util.Logger;
+
 import java.util.Set;
 
 /**

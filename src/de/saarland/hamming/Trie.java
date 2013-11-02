@@ -1,5 +1,8 @@
 package de.saarland.hamming;
 
+import de.saarland.util.Logger;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -9,6 +12,8 @@ import java.util.Set;
  *         Time: 1:15 PM
  */
 public class Trie {
+	private int nodesCount = 0;
+
 	private static final String TAG = Trie.class.getName();
 	private static final String DOLLAR = "$";
 
@@ -24,82 +29,57 @@ public class Trie {
 	 * @param strings
 	 */
 	public Trie(List<String> strings) {
-		Logger.log(TAG, String.format("Trie() strgins.size=%d", strings.size()));
+		Logger.log(TAG, String.format("Trie() strings.size=%d", strings.size()));
 
 		this.strings = strings;
-		this.root = new Node(-1, this);
+		this.root = new Node(this);
 
 		for (int i = 0; i < strings.size(); i++) {
+			// make all strings prefix free by adding DOLLAR sign
+			strings.set(i, strings.get(i) + DOLLAR);
+
 			addString(i);
 		}
 	}
 
 	private void addString(int stringIndex) {
-		Logger.log(TAG, "addString()");
+		Logger.log(TAG, String.format("addString() string=%s", strings.get(stringIndex)));
 
-		// TODO IMPLEMENT
+		// TODO check implementation
 		Node node = root;
 
 		char[] str = getString(stringIndex);
 		int charIndex = 0;
 		int endIndex = str.length - 1;
 
-		Edge edge = node.findEdge(str[charIndex]);
-		if (edge == null) {
-			edge = new Edge(stringIndex, charIndex, endIndex, node);
-			node.addEdge(stringIndex, charIndex, edge);
-			node = edge.getEndNode();
-		} else {
-			int prevStringIndex = edge.getStringIndex();
-			int prevBeginIndex  = edge.getBeginIndex();
-			int prevEndIndex    = edge.getEndIndex();
-			char[] prevStr = getString(prevStringIndex);
-			int minLength = Math.min(prevEndIndex-prevBeginIndex, endIndex-charIndex);
-			for (int i = 0; i < minLength; i++) {
-				if (str[charIndex] != prevStr[prevStringIndex]) {
-					// split edge at position where two strings have different characters
-					Node midNode = edge.splitEdge(i);
-					Edge newEdge = new Edge(stringIndex, charIndex, endIndex, midNode);
-					midNode.addEdge(stringIndex, charIndex, newEdge);
-					node = newEdge.getEndNode();
-					break;
-				}
-
-				prevBeginIndex++;
-				charIndex++;
-			}
-		}
-
-		node.addValue(stringIndex);
-
-		/*
-		Set<Integer> values = new HashSet<>();
-		values.add(wordId);
-
-		Tree node = this;
-
-		int len = word.length();
-
-		for (int i = 0; i < len; i++) {
-			Tree nextNode = node.getChild(word.charAt(i));
-
-			if (nextNode != null) {
-				node = nextNode;
+		while (true) {
+			Edge edge = node.findEdge(str[charIndex]);
+			if (edge == null) {
+				edge = new Edge(stringIndex, charIndex, endIndex, node);
+				node.addEdge(stringIndex, charIndex, edge);
+				Node endNode = edge.getEndNode();
+				endNode.addValue(stringIndex);
+				break;  // break while-loop
 			} else {
-				for (; i < len; i++) {
-					Tree newNode = new Tree();
-					char c = word.charAt(i);
-//                    node.addChild(Character.toUpperCase(c), newNode);
-//                    node.addChild(Character.toLowerCase(c), newNode);
-					node.addChild(c, newNode);
-					node = newNode;
+
+				node = edge.getEndNode();
+
+				int prevBeginIndex  = edge.getBeginIndex();
+				int prevEndIndex    = edge.getEndIndex();
+				char[] prevStr      = getString(edge.getStringIndex());
+				int minLength = Math.min(prevEndIndex - prevBeginIndex, endIndex - charIndex);
+				for (int i = 0; i <= minLength; i++) {
+					if (str[charIndex] != prevStr[prevBeginIndex]) {
+						// split edge at position where two strings have different characters
+						node = edge.splitEdge(i);
+						break;  // break for-loop
+					}
+
+					prevBeginIndex++;
+					charIndex++;
 				}
-				break;
 			}
 		}
-		node.getValues().addAll(values);
-
-		 */
 	}
 
 	public void buildMismatchesIndex(int k) {
@@ -107,12 +87,12 @@ public class Trie {
 			Logger.log(TAG, String.format("Warning. Mismatches index is already built for k=%d", k));
 			return;
 		}
-
 		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", k));
 
 		this.k = k;
-		// TODO IMPLEMENT
 
+		// TODO IMPLEMENT
+		this.root.buildMismatchesIndex(k);
 
 		this.isBuilt = true;
 	}
@@ -121,11 +101,56 @@ public class Trie {
 		Logger.log(TAG, String.format("search() query=%s, k=%d", query, k));
 
 		// TODO IMPLEMENT
+		Set<Integer> result = new HashSet<>();
 
-		return null;
+		Node node = root;
+		int i = 0;
+		char[] q = (query + DOLLAR).toCharArray();
+		while (i < q.length) {
+			Edge edge = node.findEdge(q[i]);
+			if (edge == null) {
+				// no need to proceed
+				break;
+			}
+
+			i++;
+
+			int stringIndex = edge.getStringIndex();
+			char[] s = getString(stringIndex);
+
+
+			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
+				if (i == q.length) {
+					break;
+				}
+				if (s[j] != q[i]) {
+					return result;
+				}
+				i++;
+			}
+			node = edge.getEndNode();
+		}
+
+		result.addAll(node.getValues());
+
+		return result;
 	}
 
-	private char[] getString(int index) {
-		return (this.strings.get(index) + DOLLAR).toCharArray();
+	public char[] getString(int index) {
+		return (this.strings.get(index)).toCharArray();
+	}
+
+	/**
+	 * TEST METHODS, REMOVE AFTERWARDS
+	 * TODO REMOVE
+	 *
+	 */
+
+	public int getNewNodeNumber() {
+		return nodesCount++;
+	}
+
+	public Node getRoot() {
+		return root;
 	}
 }
