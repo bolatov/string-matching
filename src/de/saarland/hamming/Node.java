@@ -25,14 +25,14 @@ public class Node {
 
 	/* Constructor */
 	public Node(Trie trie) {
-//		Logger.log(TAG, String.format("Node() stringIndex=%d, trie=:)", stringIndex));
+		this.name = trie.getNewNodeNumber();
+		Logger.log(TAG, String.format("Node() name=%d", name));
+
 		this.trie = trie;
 		this.edges = new HashMap<>();
 		this.weight = 1;
 		this.depth = 0;
 		this.values = new HashSet<>();
-
-		this.name = trie.getNewNodeNumber();
 	}
 
 	public void addEdge(int stringIndex, int charIndex, Edge edge) {
@@ -87,6 +87,8 @@ public class Node {
 		Queue<Node> queue = new LinkedList<>();
 		queue.add(this);
 
+		// TODO set depths
+
 		while (!queue.isEmpty()) {
 			Node node = queue.remove();
 			if (!node.isLeaf()) {
@@ -136,7 +138,7 @@ public class Node {
 		for (Edge e : getEdges()) {
 			Edge edgeCopy = e.deepCopy(nodeCopy);
 			edgeCopy.setStartNode(nodeCopy);
-			edgeCopy.insert();
+//			edgeCopy.insert();
 		}
 
 		nodeCopy.addValues(values);
@@ -145,11 +147,70 @@ public class Node {
 	}
 
 	public static Node mergeNodes(Node m, Node n) {
-		Logger.log(TAG, String.format("mergeNodes() m.depth=%d, n.depth=%d", m.getDepth(), n.getDepth()));
+		Logger.log(TAG, String.format("mergeNodes() m.name=%d, n.name=%d", m.name, n.name));
+
+		Set<Character> mNextChars = m.nextChars();
+		Set<Character> nNextChars = n.nextChars();
+
+		Set<Character> allNextChars = new HashSet<>();
+		allNextChars.addAll(mNextChars);
+		allNextChars.addAll(nNextChars);
+
+		Trie t = m.getTrie();
+		Node merged = new Node(t);
 
 		// TODO IMPLEMENT
+		for (Character ch : allNextChars) {
+			if (mNextChars.contains(ch) && nNextChars.contains(ch)) {
+				Edge mEdge = m.findEdge(ch).deepCopy(merged);
+				Edge nEdge = n.findEdge(ch).deepCopy(merged);
 
-		return null;
+				char[] mString = t.getString(mEdge.getStringIndex());
+				char[] nString = t.getString(nEdge.getStringIndex());
+
+				int minLength = Math.min(
+						mEdge.getEndIndex()-mEdge.getBeginIndex(),
+						nEdge.getEndIndex()-nEdge.getBeginIndex());
+
+				assert minLength >= 0;
+
+				int offset = 1;         // can start from the next char since first ones are same
+				int mi = mEdge.getBeginIndex() + offset;
+				int ni = nEdge.getBeginIndex() + offset;
+				int position = offset;
+				for (int i = offset; i <= minLength; i++, mi++, ni++) {
+					if (mString[mi] != nString[ni]) {
+						break;
+					}
+					position++;
+				}
+
+				// split edge if the place where the characters differ
+				// is somewhere on the edge. Otherwise take an end node
+				Node mEndNode = (mi <= mEdge.getEndIndex()) ? mEdge.splitEdge(position) : mEdge.getEndNode();
+				Node nEndNode = (ni <= nEdge.getEndIndex()) ? nEdge.splitEdge(position) : nEdge.getEndNode();
+
+				Node mergedSubNode = Node.mergeNodes(mEndNode, nEndNode);
+
+				Node mergedEndNode = merged.findEdge(ch).getEndNode();
+				for (Edge endEdge : mergedSubNode.getEdges()) {
+					mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
+				}
+				mergedEndNode.addValues(mergedSubNode.getValues());
+			} else if (mNextChars.contains(ch)) {
+				Edge edge = m.findEdge(ch).deepCopy(merged);
+				edge.insert();
+			} else {
+				Edge edge = n.findEdge(ch).deepCopy(merged);
+				edge.insert();
+			}
+		}
+
+		// TODO add values
+		merged.addValues(m.values);
+		merged.addValues(n.values);
+
+		return merged;
 	}
 
 	public Set<Integer> search(String query, int startIndex) {
@@ -162,6 +223,10 @@ public class Node {
 
 	public Trie getTrie() {
 		return trie;
+	}
+
+	public Set<Character> nextChars() {
+		return edges.keySet();
 	}
 
 	public Collection<Edge> getEdges() {

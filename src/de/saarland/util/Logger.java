@@ -7,7 +7,7 @@ package de.saarland.util;
  */
 public class Logger {
 	public static void log(String tag, String msg) {
-//		System.out.println(String.format("%s: %s", tag, msg));
+		System.out.println(String.format("%s: %s", tag, msg));
 	}
 
 	public static void err(String tag, String msg) {

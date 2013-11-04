@@ -23,13 +23,15 @@ public class Edge {
 		Logger.log(TAG, String.format("Edge() stringIndex=%d, beginIndex=%d, endIndex=%d, startNode=?",
 				stringIndex, beginIndex, endIndex));
 
-		// TODO IMPLEMENT
+		assert beginIndex <= endIndex;
+
 		this.stringIndex = stringIndex;
 		this.beginIndex = beginIndex;
 		this.endIndex = endIndex;
 		this.startNode = startNode;
 		this.endNode = new Node(getStartNode().getTrie());
 	}
+
 	//getSpan()						: int
 
 	public void insert() {
@@ -76,6 +78,9 @@ public class Edge {
 	public Node splitEdge(int position) {
 		Logger.log(TAG, String.format("splitEdge() position=%d", position));
 
+		assert position > 0;
+		assert beginIndex + position <= endIndex;
+
 		// remove current edge from the starting node
 		this.remove();
 
@@ -83,7 +88,7 @@ public class Edge {
 		Edge upperEdge = new Edge(stringIndex, beginIndex, beginIndex + position - 1, startNode);
 		upperEdge.insert();
 
-		Edge lowerEdge = this; //new Edge(stringIndex, beginIndex + position, endIndex, upperEdge.getEndNode());
+		Edge lowerEdge = this;
 		lowerEdge.startNode = upperEdge.getEndNode();
 		lowerEdge.beginIndex += position;
 		lowerEdge.insert();
@@ -96,6 +101,9 @@ public class Edge {
 	public Edge deepCopy(Node node) {
 		Edge edgeCopy = new Edge(stringIndex, beginIndex, endIndex, node);
 		edgeCopy.endNode = endNode.deepCopy();
+		// test
+		edgeCopy.insert();
+		//end test
 
 		return edgeCopy;
 	}
@@ -126,5 +134,12 @@ public class Edge {
 
 	public Node getEndNode() {
 		return endNode;
+	}
+
+	/**
+	 * only call it from Node.merge
+ 	 */
+	public void setEndNode(Node endNode) {
+		this.endNode = endNode;
 	}
 }

@@ -1,4 +1,4 @@
-package de.saarland.hamming;
+package de.saarland.hamming.deprecated;
 
 import java.util.*;
 

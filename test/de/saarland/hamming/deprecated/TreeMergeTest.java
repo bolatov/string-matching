@@ -1,20 +1,19 @@
-package de.saarland.hamming;
+package de.saarland.hamming.deprecated;
 
 import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Almer Bolatov
  *         Date: 10/19/13
  *         Time: 4:31 PM
  */
-public class TestTreeMerge {
+@Deprecated
+public class TreeMergeTest {
 
 	@Test
 	public void testEqual() {

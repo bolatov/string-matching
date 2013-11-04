@@ -15,7 +15,7 @@ public class Trie {
 	private int nodesCount = 0;
 
 	private static final String TAG = Trie.class.getName();
-	private static final String DOLLAR = "$";
+	public static final String DOLLAR = "$";
 
 	private List<String> strings;
 	private Node root;
@@ -45,38 +45,36 @@ public class Trie {
 	private void addString(int stringIndex) {
 		Logger.log(TAG, String.format("addString() string=%s", strings.get(stringIndex)));
 
-		// TODO check implementation
 		Node node = root;
 
-		char[] str = getString(stringIndex);
-		int charIndex = 0;
-		int endIndex = str.length - 1;
+		char[] str      = getString(stringIndex);
+		int currBegin   = 0;
+		int currEnd     = str.length - 1;
 
 		while (true) {
-			Edge edge = node.findEdge(str[charIndex]);
+			Edge edge = node.findEdge(str[currBegin]);
 			if (edge == null) {
-				edge = new Edge(stringIndex, charIndex, endIndex, node);
-				node.addEdge(stringIndex, charIndex, edge);
+				edge = new Edge(stringIndex, currBegin, currEnd, node);
+				node.addEdge(stringIndex, currBegin, edge);
 				Node endNode = edge.getEndNode();
 				endNode.addValue(stringIndex);
 				break;  // break while-loop
 			} else {
-
 				node = edge.getEndNode();
 
-				int prevBeginIndex  = edge.getBeginIndex();
-				int prevEndIndex    = edge.getEndIndex();
-				char[] prevStr      = getString(edge.getStringIndex());
-				int minLength = Math.min(prevEndIndex - prevBeginIndex, endIndex - charIndex);
+				int prevBegin   = edge.getBeginIndex();
+				int prevEnd     = edge.getEndIndex();
+				char[] prevStr  = getString(edge.getStringIndex());
+				int minLength = Math.min(prevEnd - prevBegin, currEnd - currBegin);
 				for (int i = 0; i <= minLength; i++) {
-					if (str[charIndex] != prevStr[prevBeginIndex]) {
+					if (str[currBegin] != prevStr[prevBegin]) {
 						// split edge at position where two strings have different characters
 						node = edge.splitEdge(i);
 						break;  // break for-loop
 					}
 
-					prevBeginIndex++;
-					charIndex++;
+					prevBegin++;
+					currBegin++;
 				}
 			}
 		}
