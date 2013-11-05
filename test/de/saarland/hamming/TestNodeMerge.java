@@ -75,8 +75,7 @@ public class TestNodeMerge extends TestCase {
 		// $
 		Edge dollarEdge = m.findEdge('$');
 		assertNotNull(dollarEdge);
-		assertEquals(1, dollarEdge.getBeginIndex());            // beginIndex
-		assertEquals(1, dollarEdge.getEndIndex());              // endIndex
+		assertEquals(0, dollarEdge.getSpan());            // beginIndex
 		Node dollarNode = dollarEdge.getEndNode();
 		assertEquals(2, dollarNode.getValues().size());
 		assertTrue(dollarNode.getValues().contains(0));
@@ -85,8 +84,7 @@ public class TestNodeMerge extends TestCase {
 		// a
 		Edge aEdge = m.findEdge('a');
 		assertNotNull(aEdge);
-		assertEquals(1, aEdge.getBeginIndex());                 // beginIndex
-		assertEquals(1, aEdge.getEndIndex());                   // endIndex
+		assertEquals(0, aEdge.getSpan());                 // beginIndex
 
 		Node aNode = aEdge.getEndNode();
 		assertNotNull(aNode);
@@ -95,8 +93,7 @@ public class TestNodeMerge extends TestCase {
 		// ab
 		Edge bEdge = aNode.findEdge('b');
 		assertNotNull(bEdge);
-		assertEquals(2, bEdge.getBeginIndex());
-		assertEquals(3, bEdge.getEndIndex());
+		assertEquals(1, bEdge.getSpan());
 
 		Node bNode = bEdge.getEndNode();
 		assertEquals(1, bNode.getValues().size());
@@ -106,8 +103,7 @@ public class TestNodeMerge extends TestCase {
 		// ac
 		Edge cEdge = aNode.findEdge('c');
 		assertNotNull(cEdge);
-		assertEquals(2, cEdge.getBeginIndex());
-		assertEquals(3, cEdge.getEndIndex());
+		assertEquals(1, cEdge.getSpan());
 
 		Node cNode = cEdge.getEndNode();
 		assertEquals(1, cNode.getValues().size());
@@ -297,17 +293,41 @@ public class TestNodeMerge extends TestCase {
 		// aa
 		Edge aEdge = m.findEdge('a');
 		assertNotNull(aEdge);
-		assertEquals(1, aEdge.getEndIndex()-aEdge.getBeginIndex());
+		assertEquals(1, aEdge.getSpan());
 
 		Node aNode = aEdge.getEndNode();
 		assertNotNull(aNode);
 		assertFalse(aNode.isLeaf());
 
+		// TODO FILL IN ASSERTIONS
+
 		// aa$
+		Edge aaDollarEdge = aNode.findEdge('$');
+		assertNotNull(aaDollarEdge);
+		assertEquals(0, aaDollarEdge.getSpan());
+
+		Node aaDollarNode = aaDollarEdge.getEndNode();
+		assertNotNull(aaDollarNode);
+		assertTrue(aaDollarNode.isLeaf());
+		assertEquals(1, aaDollarNode.getValues().size());
+		assertTrue(aaDollarNode.getValues().contains(4));
 
 		// aab
+		Edge aabEdge = aNode.findEdge('b');
+		assertNotNull(aabEdge);
+		assertEquals(0, aabEdge.getSpan());
+
+		Node aabNode = aabEdge.getEndNode();
+		assertNotNull(aabNode);
+		assertFalse(aabNode.isLeaf());
 
 		// aab$
+		Edge aabDollarEdge = aabNode.findEdge('$');
+
+		Node aabDollarNode = aabDollarEdge.getEndNode();
+		assertTrue(aabDollarNode.isLeaf());
+		assertEquals(1, aabDollarNode.getValues().size());
+		assertTrue(aabDollarNode.getValues().contains(3));
 
 		// aabc
 
@@ -318,8 +338,24 @@ public class TestNodeMerge extends TestCase {
 		// aabce$
 
 		// aabcef$
+		Edge lastF = aabNode.findEdge('c').getEndNode().findEdge('e').getEndNode().findEdge('f');
+		assertEquals(1, lastF.getSpan());
+
+		Node lastFNode = lastF.getEndNode();
+		assertTrue(lastFNode.isLeaf());
+		assertEquals(2, lastFNode.getValues().size());
+		assertTrue(lastFNode.getValues().contains(0));
+		assertTrue(lastFNode.getValues().contains(6));
 
 		// aabcebk$
+		Edge last = aabNode.findEdge('c').getEndNode().findEdge('e').getEndNode().findEdge('b');
+		assertEquals(2, last.getSpan());
+
+		Node lastNode = last.getEndNode();
+		assertTrue(lastNode.isLeaf());
+		assertEquals(1, lastNode.getValues().size());
+		assertTrue(lastNode.getValues().contains(1));
+
 
 		System.out.println("testMergeNodes5(): END");
 	}

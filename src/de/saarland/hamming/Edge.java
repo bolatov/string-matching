@@ -32,7 +32,9 @@ public class Edge {
 		this.endNode = new Node(getStartNode().getTrie());
 	}
 
-	//getSpan()						: int
+	public int getSpan() {
+		return this.endIndex - this.beginIndex;
+	}
 
 	public void insert() {
 		Logger.log(TAG, String.format("insert()"));

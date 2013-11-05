@@ -63,9 +63,9 @@ public class Trie {
 				node = edge.getEndNode();
 
 				int prevBegin   = edge.getBeginIndex();
-				int prevEnd     = edge.getEndIndex();
+
 				char[] prevStr  = getString(edge.getStringIndex());
-				int minLength = Math.min(prevEnd - prevBegin, currEnd - currBegin);
+				int minLength = Math.min(edge.getSpan(), currEnd - currBegin);
 				for (int i = 0; i <= minLength; i++) {
 					if (str[currBegin] != prevStr[prevBegin]) {
 						// split edge at position where two strings have different characters

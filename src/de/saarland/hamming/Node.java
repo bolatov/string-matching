@@ -168,9 +168,7 @@ public class Node {
 				char[] mString = t.getString(mEdge.getStringIndex());
 				char[] nString = t.getString(nEdge.getStringIndex());
 
-				int minLength = Math.min(
-						mEdge.getEndIndex()-mEdge.getBeginIndex(),
-						nEdge.getEndIndex()-nEdge.getBeginIndex());
+				int minLength = Math.min(mEdge.getSpan(), nEdge.getSpan());
 
 				assert minLength >= 0;
 
