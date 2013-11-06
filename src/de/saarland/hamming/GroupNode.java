@@ -10,14 +10,22 @@ import java.util.Set;
  *         Date: 10/31/13
  *         Time: 1:17 PM
  */
-public abstract class GroupNode {
+public class GroupNode {
 	private static final String TAG = GroupNode.class.getName();
+
+	public enum GroupType { ONE, TWO}
+
+	private GroupType groupType;
 
 	protected char id;
 	protected GroupNode left;
 	protected GroupNode right;
 	protected GroupNode parent;
 	protected GroupNode node;
+
+	private GroupNode(GroupType groupType) {
+		this.groupType = groupType;
+	}
 
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
 		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));

@@ -88,6 +88,7 @@ public class Node {
 		queue.add(this);
 
 		// TODO set depths
+		this.depth = 0;
 
 		while (!queue.isEmpty()) {
 			Node node = queue.remove();
@@ -102,9 +103,11 @@ public class Node {
 						maxWeight = endNode.getWeight();
 					}
 
+					endNode.depth = 0;
 					queue.add(endNode);
 				}
 				node.setHeavyEdge(heavy);
+				heavy.getEndNode().depth = node.depth + 1;
 			}
 		}
 	}
