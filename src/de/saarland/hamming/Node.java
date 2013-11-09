@@ -16,7 +16,7 @@ public class Node {
 
 	private Trie trie;
 	private Map<Character, Edge> edges;
-	private int weight;
+	private int weight;                         // number of leaves hanging from this node
 	private int depth;                          // relative depth in the heavy path
 	private Edge heavyEdge;                     // Either Node or Edge
 	private Set<Integer> values;
@@ -30,8 +30,6 @@ public class Node {
 
 		this.trie = trie;
 		this.edges = new HashMap<>();
-		this.weight = 1;
-		this.depth = 0;
 		this.values = new HashSet<>();
 	}
 
@@ -75,8 +73,115 @@ public class Node {
 	public void buildMismatchesIndex(int k) {
 		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", k));
 
-		// TODO IMPLEMENT
+		if (k <= 0) {
+			Logger.log(TAG, String.format(" k<=0 Nothing to do here"));
+			return;
+		}
+
+		// TODO
+		// possibly no need to do this step for
+		// next iteration of k-1 mismatches building
 		doHeavyPathDecomposition();
+
+		/**
+		 * Traverse each heavy path in a BFS manner each time
+		 * adding a head of a heavy path to the queue.
+		 *
+		 * TYPE 1
+		 * For each heavy path build a type 1 group trees.
+		 *
+		 * TYPE 2
+		 * Build type 2 group trees for the off-path children
+		 * of a heavy node v_i.
+		 */
+
+		Queue<Node> heavyQueue = new LinkedList<>();
+		heavyQueue.add(this);
+
+		while (!heavyQueue.isEmpty()) {
+
+			final Node head = heavyQueue.remove();
+
+			int stringIndex = head.heavyEdge.getStringIndex();
+			int beginIndex = head.heavyEdge.getBeginIndex();
+
+			Node current = head;
+
+			List<GroupNode> onPathVertices = new ArrayList<>();
+
+			// Traverse vertices along the heavy path
+			while (!current.isLeaf()) {
+
+				Node mergedChildren = null;
+
+				List<GroupNode> offPathChildren = new ArrayList<>();
+
+				// only off-path children
+				for (char nextChar : current.nextChars()) {
+					Edge edge = current.findEdge(nextChar);
+
+					if (!edge.equals(current.getHeavyEdge())) {
+
+						Node subNode = edge.sub();
+						mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
+
+						// type 2
+						GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
+						offPathGroupNode.setId(nextChar + "");
+						offPathGroupNode.setNode(subNode);
+						offPathChildren.add(offPathGroupNode);
+
+						// BFS
+						Node offPathChild = edge.getEndNode();
+						if (!offPathChild.isLeaf()) {
+							heavyQueue.add(offPathChild);
+						}
+					}
+				}
+
+				// Set type 2 group tree that are built from off-path vertices
+				GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
+				current.groupType2 = type2GroupNode;
+
+				if (k-1 > 0) {
+					type2GroupNode.buildMismatchesIndex(k-1);
+				}
+
+				assert mergedChildren != null;
+
+				Node errTV = new Node(current.trie);
+				int heavyEndIndex = current.heavyEdge.getEndIndex();
+				Edge errTVEdge = new Edge(stringIndex, beginIndex, heavyEndIndex, errTV);
+				errTVEdge.insert();
+
+				for (char ch : mergedChildren.nextChars()) {
+					errTVEdge.getEndNode().edges.put(ch, mergedChildren.findEdge(ch));
+				}
+				GroupNode onPathVertex = new GroupNode(GroupNode.GroupType.ONE);
+				onPathVertex.setId(current.getDepth() + "");
+				onPathVertex.setNode(errTV);
+
+				onPathVertices.add(onPathVertex);
+
+				// next vertex on the heavy path
+				current = current.getHeavyEdge().getEndNode();
+			}
+
+
+			// Set type 1 group tree to vertices along the heavy path
+			GroupNode type1GroupNode = GroupNode.buildGroup(onPathVertices);
+			current = head;
+			while (!current.isLeaf()) {
+				current.groupType1 = type1GroupNode;
+
+				// next vertex on the heavy path
+				current = current.getHeavyEdge().getEndNode();
+			}
+
+			if (k-1 > 0) {
+				type1GroupNode.buildMismatchesIndex(k-1);
+			}
+		}
 	}
 
 	public void doHeavyPathDecomposition() {
@@ -87,7 +192,6 @@ public class Node {
 		Queue<Node> queue = new LinkedList<>();
 		queue.add(this);
 
-		// TODO set depths
 		this.depth = 0;
 
 		while (!queue.isEmpty()) {
@@ -250,6 +354,15 @@ public class Node {
 		return heavyEdge;
 	}
 
+	private Collection<Edge> getLightEdges() {
+		Collection<Edge> lightEdges = new LinkedList<>();
+		for (Edge edge : getEdges()) {
+			if (!edge.equals(heavyEdge))
+				lightEdges.add(edge);
+		}
+		return lightEdges;
+	}
+
 	private void setHeavyEdge(Edge edge) {
 		this.heavyEdge = edge;
 	}
@@ -268,5 +381,21 @@ public class Node {
 
 	public boolean isLeaf() {
 		return edges.isEmpty();
+	}
+
+	public GroupNode getGroupType1() {
+		return groupType1;
+	}
+
+	public void setGroupType1(GroupNode groupType1) {
+		this.groupType1 = groupType1;
+	}
+
+	public GroupNode getGroupType2() {
+		return groupType2;
+	}
+
+	public void setGroupType2(GroupNode groupType2) {
+		this.groupType2 = groupType2;
 	}
 }

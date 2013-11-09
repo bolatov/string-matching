@@ -89,7 +89,6 @@ public class Trie {
 
 		this.k = k;
 
-		// TODO IMPLEMENT
 		this.root.buildMismatchesIndex(k);
 
 		this.isBuilt = true;
