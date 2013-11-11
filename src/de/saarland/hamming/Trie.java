@@ -14,7 +14,7 @@ import java.util.Set;
 public class Trie {
 	private int nodesCount = 0;
 
-	private static final String TAG = Trie.class.getName();
+	private static final String TAG = Trie.class.getSimpleName();
 	public static final String DOLLAR = "$";
 
 	private List<String> strings;

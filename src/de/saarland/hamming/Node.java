@@ -10,7 +10,7 @@ import java.util.*;
  *         Time: 1:14 PM
  */
 public class Node {
-	private static final String TAG = Node.class.getName();
+	private static final String TAG = Node.class.getSimpleName();
 
 	private int name;
 
@@ -40,7 +40,7 @@ public class Node {
 
 		if (edges.containsKey(key)) {
 			// TODO REMOVE AFTERWARDS
-			Logger.err(TAG, String.format("Node name=%d already has edge for character=%c", name, key));
+			Logger.err(TAG, String.format("addEdge(): Node name=%d already has edge for character=%c", name, key));
 		}
 
 		edges.put(key, edge);
@@ -102,8 +102,8 @@ public class Node {
 
 			final Node head = heavyQueue.remove();
 
-			int stringIndex = head.heavyEdge.getStringIndex();
-			int beginIndex = head.heavyEdge.getBeginIndex();
+			int headStringIndex = head.heavyEdge.getStringIndex();
+			int headBeginIndex = head.heavyEdge.getBeginIndex();
 
 			Node current = head;
 
@@ -140,6 +140,7 @@ public class Node {
 				}
 
 				// Set type 2 group tree that are built from off-path vertices
+				Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
 				GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
 				current.groupType2 = type2GroupNode;
 
@@ -150,14 +151,30 @@ public class Node {
 				assert mergedChildren != null;
 
 				Node errTV = new Node(current.trie);
-				int heavyEndIndex = current.heavyEdge.getEndIndex();
-				Edge errTVEdge = new Edge(stringIndex, beginIndex, heavyEndIndex, errTV);
+				// begin
+				Node endNode = null;
+				// TODO if stringIndex != stringIndex, create new edge
+				int endIndex = headBeginIndex - 1;
+				Node tempNode = head;
+				for (int i = 0; i < current.depth; i++) {
+					endIndex = tempNode.heavyEdge.getEndIndex();
+					tempNode = tempNode.heavyEdge.getEndNode();
+				}
+				// take nextChar that points to the heavy edge
+				endIndex++;
+
+				Edge errTVEdge = new Edge(headStringIndex, headBeginIndex, endIndex, errTV);
 				errTVEdge.insert();
 
+//				assert endNode != null;
+
 				for (char ch : mergedChildren.nextChars()) {
-					errTVEdge.getEndNode().edges.put(ch, mergedChildren.findEdge(ch));
+					Edge edge = mergedChildren.findEdge(ch);
+					endNode.edges.put(ch, edge);
 				}
-				GroupNode onPathVertex = new GroupNode(GroupNode.GroupType.ONE);
+				// end
+				GroupNode.GroupType type = GroupNode.GroupType.ONE;
+				GroupNode onPathVertex = new GroupNode(type);
 				onPathVertex.setId(current.getDepth() + "");
 				onPathVertex.setNode(errTV);
 
@@ -169,6 +186,7 @@ public class Node {
 
 
 			// Set type 1 group tree to vertices along the heavy path
+			Logger.log(TAG, String.format("buildMismatchesIndex(): build type 1 group trees"));
 			GroupNode type1GroupNode = GroupNode.buildGroup(onPathVertices);
 			current = head;
 			while (!current.isLeaf()) {
@@ -350,7 +368,11 @@ public class Node {
 		return depth;
 	}
 
-	private Edge getHeavyEdge() {
+	public void setDepth(int depth) {
+		this.depth = depth;
+	}
+
+	public Edge getHeavyEdge() {
 		return heavyEdge;
 	}
 
@@ -363,7 +385,7 @@ public class Node {
 		return lightEdges;
 	}
 
-	private void setHeavyEdge(Edge edge) {
+	public void setHeavyEdge(Edge edge) {
 		this.heavyEdge = edge;
 	}
 
@@ -398,4 +420,5 @@ public class Node {
 	public void setGroupType2(GroupNode groupType2) {
 		this.groupType2 = groupType2;
 	}
+
 }

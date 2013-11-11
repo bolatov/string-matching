@@ -10,8 +10,7 @@ import java.util.*;
  *         Time: 1:17 PM
  */
 public class GroupNode {
-	private static final String TAG = GroupNode.class.getName();
-
+	private static final String TAG = GroupNode.class.getSimpleName();
 
 
 	public enum GroupType { ONE, TWO;}
@@ -23,9 +22,6 @@ public class GroupNode {
 	private GroupNode rightChild;
 	private GroupNode parent;
 	private Node node;
-	private GroupNode() {
-
-	}
 
 	public GroupNode(GroupType groupType) {
 		this.groupType = groupType;
@@ -74,14 +70,16 @@ public class GroupNode {
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
 		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
 
+		assert groupNodes != null;
+
+		GroupType type = groupNodes.get(0).groupType;
+
 		// TODO Check
 		if (groupNodes.size() == 0) {
 			System.err.println("No error trees in the list.");
 			return null;
 		} else if (groupNodes.size() == 1) {
-			GroupNode groupNode = new GroupNode();
-			groupNode.setNode(groupNodes.get(0).getNode());
-			return groupNode;
+			return groupNodes.get(0);
 		}
 
 		return build(groupNodes, 0, groupNodes.size() - 1);
@@ -90,9 +88,11 @@ public class GroupNode {
 	private static GroupNode build(List<GroupNode> groupNodes, int p, int r) {
 		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", p, r));
 
+		GroupType type = groupNodes.get(0).groupType;
+
 		// TODO Check
 		if (p < r) {
-			GroupNode result =  new GroupNode();
+			GroupNode result =  new GroupNode(type);
 
 			int q = (p + r) / 2;
 			GroupNode left = build(groupNodes, p, q);

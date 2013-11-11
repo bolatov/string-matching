@@ -8,7 +8,7 @@ import de.saarland.util.Logger;
  *         Time: 1:15 PM
  */
 public class Edge {
-	private static final String TAG = Edge.class.getName();
+	private static final String TAG = Edge.class.getSimpleName();
 
 	private int stringIndex;
 	private int beginIndex;                    // can't be changed
@@ -23,6 +23,8 @@ public class Edge {
 		Logger.log(TAG, String.format("Edge() stringIndex=%d, beginIndex=%d, endIndex=%d, startNode=?",
 				stringIndex, beginIndex, endIndex));
 
+		assert stringIndex >= 0;
+		assert beginIndex >= 0;
 		assert beginIndex <= endIndex;
 
 		this.stringIndex = stringIndex;

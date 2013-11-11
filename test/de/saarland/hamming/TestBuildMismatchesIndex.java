@@ -19,7 +19,7 @@ public class TestBuildMismatchesIndex extends TestCase{
 		List<String> s = new ArrayList<>();
 		s.add("far");
 		s.add("fat");
-		s.add("fix");
+		s.add("fit");
 		s.add("pay");
 		s.add("pin");
 		s.add("sit");
@@ -27,6 +27,28 @@ public class TestBuildMismatchesIndex extends TestCase{
 		Trie t = new Trie(s);
 		int k = 1;
 		t.buildMismatchesIndex(k);
+
+		Node root = t.getRoot();
+		GroupNode rootGroupNode = root.getGroupType1();
+		assertNotNull(rootGroupNode);
+
+		// root 1+2+3
+		Node r123Node = rootGroupNode.getNode();
+		assertNotNull(r123Node);
+		assertEquals(1, r123Node.getEdges().size());
+		Edge fEdge = r123Node.findEdge('f');
+		assertNotNull(fEdge);
+		assertEquals(0, fEdge.getSpan());
+		Node fNode = fEdge.getEndNode();
+		assertNotNull(fNode);
+		assertEquals(2, fNode.getEdges().size());
+
+
+		// root 3
+
+		// root 1
+
+		// root 2
 
 		Logger.log(TAG, "test1(): END");
 	}
