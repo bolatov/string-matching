@@ -299,8 +299,6 @@ public class TestNodeMerge extends TestCase {
 		assertNotNull(aNode);
 		assertFalse(aNode.isLeaf());
 
-		// TODO FILL IN ASSERTIONS
-
 		// aa$
 		Edge aaDollarEdge = aNode.findEdge('$');
 		assertNotNull(aaDollarEdge);

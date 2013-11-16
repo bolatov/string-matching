@@ -74,7 +74,6 @@ public class GroupNode {
 
 		GroupType type = groupNodes.get(0).groupType;
 
-		// TODO Check
 		if (groupNodes.size() == 0) {
 			System.err.println("No error trees in the list.");
 			return null;
@@ -90,7 +89,6 @@ public class GroupNode {
 
 		GroupType type = groupNodes.get(0).groupType;
 
-		// TODO Check
 		if (p < r) {
 			GroupNode result =  new GroupNode(type);
 
@@ -113,40 +111,105 @@ public class GroupNode {
 		return groupNodes.get(p);
 	}
 
-	public Set<Integer> search(String query, int startIndex, String groupNodeId) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%c", query, startIndex, groupNodeId));
+	public Set<Integer> search(char[] q, int i, int k, String id) {
+		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%c", String.valueOf(q), i, id));
 
-		GroupNode groupNode = findGroup(groupNodeId);
+		assert q != null;
+		assert q.length > 0;
+		assert i >= 0;
+		assert i < q.length;
+		assert k >= 0;
+		assert id != null;
+		assert !"".equals(id);
 
 		Set<Integer> results = null;
 
 		switch (groupType) {
 			case ONE:
-				results = searchTypeOne(query, startIndex);
+				results = searchTypeOne(q, i, k, id);
 				break;
 			case TWO:
-				results = searchTypeTwo(query, startIndex);
+				results = searchTypeTwo(q, i, k, id);
 				break;
 			default:
-				results = new HashSet<>();
+//				results = new HashSet<>();
 				break;
+		}
+
+		assert results != null;
+
+		return results;
+	}
+
+	/**
+	 * Search type 1 group trees. Query all group nodes whose
+	 * merge includes precisely Err(T,v_1),..,Err(T,v_(id-1))
+	 * @param q
+	 * @param i
+	 * @param k
+	 * @param id
+	 * @return
+	 */
+	private Set<Integer> searchTypeOne(char[] q, int i, int k, String id) {
+		GroupNode groupNode = findGroup(id);
+
+		assert groupNode != null;
+
+		List<Node> list = new LinkedList<>();
+		list.add(groupNode.getNode());
+
+		while (groupNode.getParent() != null) {
+			GroupNode parent = groupNode.getParent();
+			GroupNode lChild = parent.getLeftChild();
+			if (lChild != null) {
+				list.add(lChild.getNode());
+			}
+			groupNode = parent;
+		}
+
+		Set<Integer> results = new HashSet<>();
+		for (Node n : list) {
+			results.addAll(n.search(q, i, k));
 		}
 
 		return results;
 	}
 
-	private Set<Integer> searchTypeOne(String query, int startIndex) {
+	/**
+	 * Search type 2 group trees. Query all group nodes, except
+	 * the one with id='id'
+	 * @param q
+	 * @param i
+	 * @param k
+	 * @param id
+	 * @return
+	 */
+	private Set<Integer> searchTypeTwo(char[] q, int i, int k, String id) {
+		GroupNode groupNode = findGroup(id);
 
-		// TODO IMPLEMENT
+		assert groupNode != null;
 
-		return null;
-	}
+		List<Node> list = new LinkedList<>();
+		list.add(groupNode.getNode());
 
-	private Set<Integer> searchTypeTwo(String query, int startIndex) {
+		while (groupNode.getParent() != null) {
+			GroupNode parent = groupNode.getParent();
+			GroupNode lChild = parent.getLeftChild();
+			GroupNode rChild = parent.getRightChild();
+			if (!lChild.equals(groupNode)) {
+				list.add(lChild.getNode());
+			} else {
+				list.add(rChild.getNode());
+			}
+			groupNode = parent;
+		}
 
-		// TODO IMPLEMENT
+		Set<Integer> results = new HashSet<>();
+		for (Node n : list) {
+			results.addAll(n.search(q, i, k));
+		}
 
-		return null;
+		return results;
 	}
 
 	private GroupNode findGroup(String groupNodeId) {
@@ -176,8 +239,10 @@ public class GroupNode {
 
 		if (k <= 0) {
 			Logger.log(TAG, String.format(" k<=0 Nothing to do here"));
-			return;
+//			return;
 		}
+
+		assert k > 0;
 
 		Queue<GroupNode> groupNodeQueue = new LinkedList<>();
 		groupNodeQueue.add(this);

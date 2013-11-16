@@ -2,7 +2,6 @@ package de.saarland.hamming;
 
 import de.saarland.util.Logger;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,7 +19,7 @@ public class Trie {
 	private List<String> strings;
 	private Node root;
 
-	private int k = 0;
+	private int maxK = 0;
 	private boolean isBuilt = false;
 
 	/**
@@ -82,12 +81,12 @@ public class Trie {
 
 	public void buildMismatchesIndex(int k) {
 		if (isBuilt) {
-			Logger.log(TAG, String.format("Warning. Mismatches index is already built for k=%d", k));
+			Logger.log(TAG, String.format("Warning. Mismatches index is already built for maxK=%d", k));
 			return;
 		}
-		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", k));
+		Logger.log(TAG, String.format("buildMismatchesIndex() maxK=%d", k));
 
-		this.k = k;
+		this.maxK = k;
 
 		this.root.buildMismatchesIndex(k);
 
@@ -95,43 +94,54 @@ public class Trie {
 	}
 
 	public Set<Integer> search(String query, int k) {
-		Logger.log(TAG, String.format("search() query=%s, k=%d", query, k));
-
-		// TODO IMPLEMENT
-		Set<Integer> result = new HashSet<>();
-
-		Node node = root;
-		int i = 0;
-		char[] q = (query + DOLLAR).toCharArray();
-		while (i < q.length) {
-			Edge edge = node.findEdge(q[i]);
-			if (edge == null) {
-				// no need to proceed
-				break;
-			}
-
-			i++;
-
-			int stringIndex = edge.getStringIndex();
-			char[] s = getString(stringIndex);
-
-
-			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
-				if (i == q.length) {
-					break;
-				}
-				if (s[j] != q[i]) {
-					return result;
-				}
-				i++;
-			}
-			node = edge.getEndNode();
+		Logger.log(TAG, String.format("search() query=%s, maxK=%d", query, k));
+		if (k > maxK) {
+			Logger.err(TAG, String.format("search(): Queries with distance %d are NOT supported.", k));
+			return null;
 		}
 
-		result.addAll(node.getValues());
+		char[] q = (query + DOLLAR).toCharArray();
+		Set<Integer> results = root.search(q, 0, k);
 
-		return result;
+		return results;
 	}
+
+//	private Set<Integer> searchSAMPLE(String query, int k) {
+//		Logger.log(TAG, String.format("searchSAMPLE() query=%s, maxK=%d", query, k));
+//
+//		Set<Integer> results = new HashSet<>();
+//
+//		Node node = root;
+//		int i = 0;
+//		char[] q = (query + DOLLAR).toCharArray();
+//		while (i < q.length) {
+//			Edge edge = node.findEdge(q[i]);
+//			if (edge == null) {
+//				// no need to proceed
+//				break;
+//			}
+//
+//			i++;
+//
+//			int stringIndex = edge.getStringIndex();
+//			char[] s = getString(stringIndex);
+//
+//			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
+//				if (i == q.length) {
+//					break;
+//				}
+//				if (s[j] != q[i]) {
+//					return results;
+//				}
+//				i++;
+//			}
+//			node = edge.getEndNode();
+//		}
+//
+//		results.addAll(node.getValues());
+//
+//		return results;
+//	}
 
 	public char[] getString(int index) {
 		return (this.strings.get(index)).toCharArray();

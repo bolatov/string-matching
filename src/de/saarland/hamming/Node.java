@@ -99,80 +99,31 @@ public class Node {
 		heavyQueue.add(this);
 
 		while (!heavyQueue.isEmpty()) {
-
 			final Node head = heavyQueue.remove();
 
-			int headStringIndex = head.heavyEdge.getStringIndex();
-			int headBeginIndex = head.heavyEdge.getBeginIndex();
-
+			List<GroupNode> onPathVertices = new ArrayList<>();
 			Node current = head;
 
-			List<GroupNode> onPathVertices = new ArrayList<>();
+			int i = 1;
 
 			// Traverse vertices along the heavy path
 			while (!current.isLeaf()) {
 
-				Node mergedChildren = null;
-
-				List<GroupNode> offPathChildren = new ArrayList<>();
-
-				// only off-path children
-				for (char nextChar : current.nextChars()) {
-					Edge edge = current.findEdge(nextChar);
-
-					if (!edge.equals(current.getHeavyEdge())) {
-
-						Node subNode = edge.sub();
-						mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
-
-						// type 2
-						GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
-						offPathGroupNode.setId(nextChar + "");
-						offPathGroupNode.setNode(subNode);
-						offPathChildren.add(offPathGroupNode);
-
-						// BFS
-						Node offPathChild = edge.getEndNode();
-						if (!offPathChild.isLeaf()) {
-							heavyQueue.add(offPathChild);
-						}
-					}
-				}
+				System.out.println(i++);
 
 				// Set type 2 group tree that are built from off-path vertices
 				Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
-				GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
+				GroupNode type2GroupNode = current.prepareType2GroupNode();
 				current.groupType2 = type2GroupNode;
 
 				if (k-1 > 0) {
 					type2GroupNode.buildMismatchesIndex(k-1);
 				}
 
-				assert mergedChildren != null;
+				Node mergedChildren = current.prepareMergedOffPathChildren();
+				Node errTV = current.prepareErrTree(head, mergedChildren);
 
-				Node errTV = new Node(current.trie);
-				// begin
-				Node endNode = null;
-				// TODO if stringIndex != stringIndex, create new edge
-				int endIndex = headBeginIndex - 1;
-				Node tempNode = head;
-				for (int i = 0; i < current.depth; i++) {
-					endIndex = tempNode.heavyEdge.getEndIndex();
-					tempNode = tempNode.heavyEdge.getEndNode();
-				}
-				// take nextChar that points to the heavy edge
-				endIndex++;
-
-				Edge errTVEdge = new Edge(headStringIndex, headBeginIndex, endIndex, errTV);
-				errTVEdge.insert();
-
-//				assert endNode != null;
-
-				for (char ch : mergedChildren.nextChars()) {
-					Edge edge = mergedChildren.findEdge(ch);
-					endNode.edges.put(ch, edge);
-				}
-				// end
+				// Create a single group node from an error tree
 				GroupNode.GroupType type = GroupNode.GroupType.ONE;
 				GroupNode onPathVertex = new GroupNode(type);
 				onPathVertex.setId(current.getDepth() + "");
@@ -188,18 +139,121 @@ public class Node {
 			// Set type 1 group tree to vertices along the heavy path
 			Logger.log(TAG, String.format("buildMismatchesIndex(): build type 1 group trees"));
 			GroupNode type1GroupNode = GroupNode.buildGroup(onPathVertices);
-			current = head;
-			while (!current.isLeaf()) {
-				current.groupType1 = type1GroupNode;
+			Node iteratorNode = head;
+			while (!iteratorNode.isLeaf()) {
+				iteratorNode.groupType1 = type1GroupNode;
 
 				// next vertex on the heavy path
-				current = current.getHeavyEdge().getEndNode();
+				iteratorNode = iteratorNode.getHeavyEdge().getEndNode();
 			}
 
 			if (k-1 > 0) {
 				type1GroupNode.buildMismatchesIndex(k-1);
 			}
 		}
+	}
+
+	private Node prepareMergedOffPathChildren() {
+		Node mergedChildren = null;
+
+		for (char nextChar : nextChars()) {
+			Edge edge = findEdge(nextChar);
+
+			if (!edge.equals(heavyEdge)) {
+				Node subNode = edge.sub();
+				mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
+			}
+		}
+
+		return mergedChildren;
+	}
+
+	private GroupNode prepareType2GroupNode() {
+		List<GroupNode> offPathChildren = new ArrayList<>();
+
+		for (char nextChar : nextChars()) {
+			Edge edge = findEdge(nextChar);
+
+			if (!edge.equals(heavyEdge)) {
+				Node subNode = edge.sub();
+
+				// type 2
+				GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
+				offPathGroupNode.setId(nextChar + "");
+				offPathGroupNode.setNode(subNode);
+				offPathChildren.add(offPathGroupNode);
+			}
+		}
+
+		// Set type 2 group tree that are built from off-path vertices
+		Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
+		GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
+
+		return type2GroupNode;
+	}
+
+	private Node prepareErrTree(final Node head, final Node mergedChildren) {
+		Edge lastEdge = null;
+
+		int prevStr = -1;
+
+		Node errTV = new Node(head.trie);
+
+		// str(l)
+		Node temp = head;
+		for (int i = 0; i < depth; i++) {
+			Edge tempHeavy = temp.getHeavyEdge();
+			int tStr = tempHeavy.getStringIndex();
+			int tBegin = tempHeavy.getBeginIndex();
+			int tEnd = tempHeavy.getEndIndex();
+			if (lastEdge == null) {
+				lastEdge = new Edge(tStr, tBegin, tEnd, errTV);
+				lastEdge.insert();
+			} else {
+				if (prevStr == tStr) {
+					lastEdge.setEndIndex(tEnd);
+				} else {
+					Node lastNode = lastEdge.getEndNode();
+					Edge newLastEdge = new Edge(tStr, tBegin, tEnd, lastNode);
+					newLastEdge.insert();
+					lastEdge = newLastEdge;
+				}
+			}
+
+			prevStr = tStr;
+			temp = tempHeavy.getEndNode();
+		}
+		// end str(l)
+
+		final Edge nextHeavyEdge = heavyEdge;
+		final int nextStringIndex = nextHeavyEdge.getStringIndex();
+		final int nextBeginIndex = nextHeavyEdge.getBeginIndex();
+
+		// nextChar
+		if (lastEdge == null) {
+			lastEdge = new Edge(nextStringIndex, nextBeginIndex, nextBeginIndex, errTV);
+			lastEdge.insert();
+		} else {
+			int lastStringIndex = lastEdge.getStringIndex();
+			if (lastStringIndex == nextStringIndex) {
+				int newEndIndex = lastEdge.getEndIndex() + 1;
+				lastEdge.setEndIndex(newEndIndex);
+			} else {
+				Node lastNode = lastEdge.getEndNode();
+				Edge newLastEdge = new Edge(nextStringIndex, nextBeginIndex, nextBeginIndex, lastNode);
+				newLastEdge.insert();
+				lastEdge = newLastEdge;
+			}
+		}
+		// end nextChar
+
+		Node endNode = lastEdge.getEndNode();
+		for (char ch : mergedChildren.nextChars()) {
+			final Edge e = mergedChildren.findEdge(ch);
+			endNode.addEdge(e.getStringIndex(), e.getBeginIndex(), e);
+		}
+
+		return errTV;
 	}
 
 	public void doHeavyPathDecomposition() {
@@ -284,7 +338,6 @@ public class Node {
 		Trie t = m.getTrie();
 		Node merged = new Node(t);
 
-		// TODO IMPLEMENT
 		for (Character ch : allNextChars) {
 			if (mNextChars.contains(ch) && nNextChars.contains(ch)) {
 				Edge mEdge = m.findEdge(ch).deepCopy(merged);
@@ -329,19 +382,71 @@ public class Node {
 			}
 		}
 
-		// TODO add values
 		merged.addValues(m.values);
 		merged.addValues(n.values);
 
 		return merged;
 	}
 
-	public Set<Integer> search(String query, int startIndex) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d", query, startIndex));
+	public Set<Integer> search(char[] q, int i, int k) {
+		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, k=%d", q, i, k));
 
 		// TODO IMPLEMENT
+		Set<Integer> results = new HashSet<>();
 
-		return null;
+//		Node node = this;
+//		while (i < q.length) {
+//			Edge edge = node.findEdge(q[i]);
+//
+//			if (edge == null) {
+//
+//				break;
+//			} else if (!edge.equals(node.getHeavyEdge())) {
+//				if (k > 0 && node.depth > 0) {
+//					Set<Integer> newHeadResults = gr
+//					results.addAll()
+//				}
+//				break;
+//			} else {
+//				// going along the heavy path
+//				i++;
+//
+//				int stringIndex = edge.getStringIndex();
+//				char[] s = trie.getString(stringIndex);
+//
+//				for (int j = edge.getBeginIndex()+1; j<=edge.getEndIndex(); j++) {
+//
+//				}
+//			}
+//		}
+
+		Node node = this;
+		while (i < q.length) {
+			Edge edge = node.findEdge(q[i]);
+			if (edge == null) {
+				// no need to proceed
+				break;
+			}
+			i++;
+
+			int stringIndex = edge.getStringIndex();
+			char[] s = trie.getString(stringIndex);
+
+			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
+				if (i == q.length) {
+					break;
+				}
+				if (s[j] != q[i]) {
+					return results;
+				}
+				i++;
+			}
+			node = edge.getEndNode();
+		}
+
+		results.addAll(node.getValues());
+
+		return results;
 	}
 
 	public Trie getTrie() {

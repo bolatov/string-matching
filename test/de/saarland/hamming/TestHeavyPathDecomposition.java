@@ -21,7 +21,7 @@ public class TestHeavyPathDecomposition extends TestCase {
 		s.add("sit");
 
 		Trie t = new Trie(s);
-		t.buildMismatchesIndex(0);
+		t.buildMismatchesIndex(1);
 
 		// root
 		Node root = t.getRoot();

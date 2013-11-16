@@ -17,7 +17,7 @@ public class TestHammingDistance0 extends TestCase {
     private Map<Integer, String> queries;
     private Map<Integer, Set<Integer>> answers;
 
-    private int k = 0;
+    private static final int K = 0;
 
 	public void test0() {
 		assertTrue(true);
