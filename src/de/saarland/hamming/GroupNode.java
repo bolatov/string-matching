@@ -12,11 +12,11 @@ import java.util.*;
 public class GroupNode {
 	private static final String TAG = GroupNode.class.getSimpleName();
 
+	public static enum GroupType { ONE, TWO}
 
-	public enum GroupType { ONE, TWO;}
 	private GroupType groupType;
 
-	private String id;              // dummy id
+	private String id;
 
 	private GroupNode leftChild;
 	private GroupNode rightChild;
@@ -70,12 +70,11 @@ public class GroupNode {
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
 		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
 
-		assert groupNodes != null;
-
-		GroupType type = groupNodes.get(0).groupType;
+		assert groupNodes != null && groupNodes.size() > 0;
 
 		if (groupNodes.size() == 0) {
 			System.err.println("No error trees in the list.");
+			assert groupNodes.size() > 0;
 			return null;
 		} else if (groupNodes.size() == 1) {
 			return groupNodes.get(0);
@@ -90,37 +89,40 @@ public class GroupNode {
 		GroupType type = groupNodes.get(0).groupType;
 
 		if (p < r) {
-			GroupNode result =  new GroupNode(type);
+			GroupNode parent =  new GroupNode(type);
 
 			int q = (p + r) / 2;
 			GroupNode left = build(groupNodes, p, q);
 			GroupNode right = build(groupNodes, q + 1, r);
 
-			left.setParent(result);
-			right.setParent(result);
+			// test
+			parent.setId(left.id + right.id);
 
-			result.setLeftChild(left);
-			result.setRightChild(right);
+			left.setParent(parent);
+			right.setParent(parent);
+
+			parent.setLeftChild(left);
+			parent.setRightChild(right);
 
 			Node merged = Node.mergeNodes(left.getNode(), right.getNode());
-			result.setNode(merged);
+			parent.setNode(merged);
 
-			return result;
+			return parent;
 		}
 
 		return groupNodes.get(p);
 	}
 
 	public Set<Integer> search(char[] q, int i, int k, String id) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%c", String.valueOf(q), i, id));
+		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
 
 		assert q != null;
 		assert q.length > 0;
 		assert i >= 0;
 		assert i < q.length;
 		assert k >= 0;
-		assert id != null;
-		assert !"".equals(id);
+//		assert id != null;
+//		assert !"".equals(id);
 
 		Set<Integer> results = null;
 
@@ -144,31 +146,31 @@ public class GroupNode {
 	/**
 	 * Search type 1 group trees. Query all group nodes whose
 	 * merge includes precisely Err(T,v_1),..,Err(T,v_(id-1))
-	 * @param q
-	 * @param i
-	 * @param k
-	 * @param id
-	 * @return
+	 *
+	 * HINT: Queries Err(T,v_1),..,Err(T,v_id)
 	 */
 	private Set<Integer> searchTypeOne(char[] q, int i, int k, String id) {
 		GroupNode groupNode = findGroup(id);
 
 		assert groupNode != null;
 
-		List<Node> list = new LinkedList<>();
-		list.add(groupNode.getNode());
+		Set<Integer> results = new HashSet<>();
+
+		Queue<Node> queue = new LinkedList<>();
+		queue.add(groupNode.node);
 
 		while (groupNode.getParent() != null) {
 			GroupNode parent = groupNode.getParent();
 			GroupNode lChild = parent.getLeftChild();
-			if (lChild != null) {
-				list.add(lChild.getNode());
+			if (lChild != null && !lChild.equals(groupNode)) {   // do not add the same node twice
+				queue.add(lChild.node);
 			}
 			groupNode = parent;
 		}
 
-		Set<Integer> results = new HashSet<>();
-		for (Node n : list) {
+		Node n;
+		while (!queue.isEmpty()) {
+			n = queue.remove();
 			results.addAll(n.search(q, i, k));
 		}
 
@@ -178,42 +180,38 @@ public class GroupNode {
 	/**
 	 * Search type 2 group trees. Query all group nodes, except
 	 * the one with id='id'
-	 * @param q
-	 * @param i
-	 * @param k
-	 * @param id
-	 * @return
 	 */
 	private Set<Integer> searchTypeTwo(char[] q, int i, int k, String id) {
+		Set<Integer> results = new HashSet<>();
+
 		GroupNode groupNode = findGroup(id);
+		if (groupNode == null) {
+			groupNode = this;
+			return groupNode.getNode().search(q, i, k);
+		}
 
 		assert groupNode != null;
 
-		List<Node> list = new LinkedList<>();
-		list.add(groupNode.getNode());
-
+		Node n;
 		while (groupNode.getParent() != null) {
 			GroupNode parent = groupNode.getParent();
 			GroupNode lChild = parent.getLeftChild();
 			GroupNode rChild = parent.getRightChild();
 			if (!lChild.equals(groupNode)) {
-				list.add(lChild.getNode());
+				n = lChild.getNode();
+				results.addAll(n.search(q, i, k));
 			} else {
-				list.add(rChild.getNode());
+				n = rChild.getNode();
+				results.addAll(n.search(q, i, k));
 			}
 			groupNode = parent;
-		}
-
-		Set<Integer> results = new HashSet<>();
-		for (Node n : list) {
-			results.addAll(n.search(q, i, k));
 		}
 
 		return results;
 	}
 
 	private GroupNode findGroup(String groupNodeId) {
-		Logger.log(TAG, String.format("findGroup() groupNodeId=%c", groupNodeId));
+		Logger.log(TAG, String.format("findGroup() groupNodeId=%s", groupNodeId));
 
 		Queue<GroupNode> queue = new LinkedList<>();
 		queue.add(this);

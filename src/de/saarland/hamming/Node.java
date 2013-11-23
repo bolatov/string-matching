@@ -9,7 +9,7 @@ import java.util.*;
  *         Date: 10/31/13
  *         Time: 1:14 PM
  */
-public class Node {
+public class Node implements Searchable {
 	private static final String TAG = Node.class.getSimpleName();
 
 	private int name;
@@ -111,6 +111,14 @@ public class Node {
 
 				System.out.println(i++);
 
+				// heavy path heads
+				for (Edge edge : current.getEdges()) {
+					Node headNode = edge.getEndNode();
+					if (!edge.equals(current.heavyEdge) && !headNode.isLeaf()) {
+						heavyQueue.add(headNode);
+					}
+				}
+
 				// Set type 2 group tree that are built from off-path vertices
 				Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
 				GroupNode type2GroupNode = current.prepareType2GroupNode();
@@ -187,9 +195,11 @@ public class Node {
 
 		// Set type 2 group tree that are built from off-path vertices
 		Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
-		GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
+//		GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
 
-		return type2GroupNode;
+//		return type2GroupNode;
+
+		return GroupNode.buildGroup(offPathChildren);
 	}
 
 	private Node prepareErrTree(final Node head, final Node mergedChildren) {
@@ -282,6 +292,9 @@ public class Node {
 					endNode.depth = 0;
 					queue.add(endNode);
 				}
+
+				assert heavy != null;
+
 				node.setHeavyEdge(heavy);
 				heavy.getEndNode().depth = node.depth + 1;
 			}
@@ -388,63 +401,198 @@ public class Node {
 		return merged;
 	}
 
-	public Set<Integer> search(char[] q, int i, int k) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, k=%d", q, i, k));
-
-		// TODO IMPLEMENT
+	@Override
+	public Set<Integer> search(char[] q, int start, int distance) {
 		Set<Integer> results = new HashSet<>();
 
-//		Node node = this;
-//		while (i < q.length) {
-//			Edge edge = node.findEdge(q[i]);
+		Queue<Query> queue = new LinkedList<>();
+		queue.add(new Query(this, q, start, distance));
+
+		while (!queue.isEmpty()) {
+			// traverse along the heavy path
+			Query query = queue.remove();
+			Searchable searchable = query.getSearchable();
+			int iStart = query.getStart();
+			int k = query.getK();
+//			String id = query.getId();
+
+			assert k >= 0;
+
+			if (iStart == q.length && searchable instanceof Node) {
+				results.addAll(((Node) searchable).getValues());
+				continue;
+			}
+
+			if (searchable instanceof Edge) {// || searchable instanceof GroupNode) {
+				results.addAll(searchable.search(q, iStart, k));
+			} else {
+				Node node = (Node) searchable;
+				int i = iStart;
+				boolean toContinue = true;
+				while (i < q.length && toContinue) {
+
+					assert k >= 0;
+
+					int offset = 0;
+
+					char ch = q[i];
+					Edge edge = node.findEdge(ch);
+
+					if (edge == null) {
+						if (k <= 0) break;
+
+						edge = node.heavyEdge;
+
+						Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+						results.addAll(type1Results);
+
+//						if (node.isLeaf()) break;
 //
-//			if (edge == null) {
-//
-//				break;
-//			} else if (!edge.equals(node.getHeavyEdge())) {
-//				if (k > 0 && node.depth > 0) {
-//					Set<Integer> newHeadResults = gr
-//					results.addAll()
-//				}
-//				break;
-//			} else {
-//				// going along the heavy path
-//				i++;
-//
-//				int stringIndex = edge.getStringIndex();
-//				char[] s = trie.getString(stringIndex);
-//
-//				for (int j = edge.getBeginIndex()+1; j<=edge.getEndIndex(); j++) {
-//
-//				}
-//			}
-//		}
+						Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
+						results.addAll(type2Results);
+						i++;
+						k--;
+						offset = 1;
+
+					} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
+						// got away from a heavy path
+						Query newQuery = new Query(edge, q, i, k);
+						queue.add(newQuery);
+						edge = node.heavyEdge;
+						i++;
+						k--;
+						offset = 1;
+					}
+
+					assert k >= 0;
+
+					int stringIndex = edge.getStringIndex();
+					char[] s = trie.getString(stringIndex);
+					boolean areGroupsQueried = false;                                       // todo think about moving out of while-loop
+					for (int j = edge.getBeginIndex()+offset; j <= edge.getEndIndex(); j++) {
+
+						assert i == j;
+
+						if (s[j] != q[i]) {
+							if (k > 0) {
+								if (!areGroupsQueried) {
+									areGroupsQueried = true;
+									if (node.depth > 0) {
+										Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+										results.addAll(type1Results);
+									}
+
+									Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
+//									Set<Integer> type2Results = node.groupType2.search(q, i, k-1, String.valueOf(ch));    // todo next()
+									results.addAll(type2Results);
+								}
+								k--;
+							} else {
+								toContinue = false;
+								break;
+							}
+						}
+						i++;
+					}
+
+					if (i == q.length) {
+						results.addAll(edge.getEndNode().values);
+
+						if (!areGroupsQueried) {
+							if (node.depth > 0 && k > 0) {
+								Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+								results.addAll(type1Results);
+							}
+//							Set<Integer> type2Results = node.groupType2.search(q, i, k-1, String.valueOf(ch));    // todo next()
+//							results.addAll(type2Results);
+						}
+					}
+
+					node = edge.getEndNode();
+				}
+			}
+
+		}
+
+		return results;
+	}
+
+	public Set<Integer> searchX(char[] q, int i, int k) {
+		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, k=%d", String.valueOf(q), i, k));
+
+		Set<Integer> results = new HashSet<>();
+
+		boolean toBreak = false;
 
 		Node node = this;
-		while (i < q.length) {
-			Edge edge = node.findEdge(q[i]);
+		while (toBreak || i < q.length) {
+			char ch = q[i];
+			Edge edge = node.findEdge(ch);
 			if (edge == null) {
-				// no need to proceed
-				break;
+				if (k <= 0) break;
+
+				if (node.depth > 0) {
+					Set<Integer> type1Results = node.groupType1.search(q, i+1, k-1, String.valueOf(node.depth));
+					results.addAll(type1Results);
+				}
+
+				if (node.isLeaf()) break;
+
+				Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
+				results.addAll(type2Results);
+//				k--;
+
+				edge = node.heavyEdge;
+			} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge)) {
+				System.out.println(String.format("Leaving the heavy path with char=%c, i=%d", ch, i));
+
+//				if (node.depth > 0) {
+//					Set<Integer> type1Results = node.groupType1.search(q, i+1, k, String.valueOf(node.depth));
+//					results.addAll(type1Results);
+//				}
+
+				if (node.isLeaf()) break;
+
+				Set<Integer> type2Results = node.groupType2.search(q, i+1, k, null);    // todo next()
+				results.addAll(type2Results);
+				edge = node.heavyEdge;
 			}
-			i++;
 
 			int stringIndex = edge.getStringIndex();
 			char[] s = trie.getString(stringIndex);
 
-			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
+			for (int j = edge.getBeginIndex(); j <= edge.getEndIndex(); j++) {
 				if (i == q.length) {
+					toBreak = true;
 					break;
 				}
 				if (s[j] != q[i]) {
-					return results;
+					if (k > 0) {
+						if (node.depth > 0) {
+							Set<Integer> type1Results = node.groupType1.search(q, i+1, k-1, String.valueOf(node.depth));
+							results.addAll(type1Results);
+						}
+
+//						if (node.isLeaf()) toBreak = truebreak;
+
+						Set<Integer> type2Results = node.groupType2.search(q, i, k-1, String.valueOf(ch));    // todo next()
+						results.addAll(type2Results);
+						k--;
+					} else {
+						toBreak = true;
+						break;
+					}
 				}
 				i++;
+			}
+			if (toBreak) {
+				break;
 			}
 			node = edge.getEndNode();
 		}
 
-		results.addAll(node.getValues());
+		if (i == q.length)
+			results.addAll(node.getValues());
 
 		return results;
 	}

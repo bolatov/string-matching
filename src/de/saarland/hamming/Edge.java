@@ -2,12 +2,15 @@ package de.saarland.hamming;
 
 import de.saarland.util.Logger;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author Almer Bolatov
  *         Date: 10/31/13
  *         Time: 1:15 PM
  */
-public class Edge {
+public class Edge implements Searchable {
 	private static final String TAG = Edge.class.getSimpleName();
 
 	private int stringIndex;
@@ -32,6 +35,33 @@ public class Edge {
 		this.endIndex = endIndex;
 		this.startNode = startNode;
 		this.endNode = new Node(getStartNode().getTrie());
+	}
+
+	@Override
+	public Set<Integer> search(char[] q, int i, int k) {
+		assert i >= 0;
+		assert i < q.length;
+		assert k >= 0;
+
+		Set<Integer> results = new HashSet<>();
+
+		Trie t = startNode.getTrie();
+		char[] s = t.getString(stringIndex);
+
+		for (int j = beginIndex; j <= endIndex; j++) {
+			if (s[j] != q[i]) {
+				if (k > 0)  k--;
+				else    	break;
+			}
+			i++;
+		}
+
+		if (i > endIndex) {
+			Set<Integer> res = endNode.search(q, i, k);
+			results.addAll(res);
+		}
+
+		return results;
 	}
 
 	public int getSpan() {
