@@ -128,7 +128,43 @@ public class TestHammingDistanceSimple extends TestCase {
 		r0 = t.search("XXX", K);
 		assertEquals(0, r0.size());
 
-//		r0 = t.search()
+		r0 = t.search("XXr", K);
+		assertTrue(r0.contains(0));
+		assertTrue(r0.contains(7));
+		assertEquals(2, r0.size());
+
+		r0 = t.search("XiX", K);
+		assertTrue(r0.contains(2));
+		assertTrue(r0.contains(4));
+		assertEquals(2, r0.size());
+
+		r0 = t.search("X", K);
+		assertEquals(0, r0.size());
+
+		r0 = t.search("s", K);
+		assertEquals(0, r0.size());
+
+		r0 = t.search("p", K);
+		assertEquals(0, r0.size());
+
+		r0 = t.search("f", K);
+		assertEquals(0, r0.size());
+
+		r0 = t.search("XXx", K);
+		assertTrue(r0.contains(6));
+		assertEquals(1, r0.size());
+
+		r0 = t.search("XXt", K);
+		assertTrue(r0.contains(1));
+		assertTrue(r0.contains(2));
+		assertTrue(r0.contains(5));
+		assertEquals(3, r0.size());
+
+		r0 = t.search("faX", K-1);
+		assertTrue(r0.contains(0));
+		assertTrue(r0.contains(1));
+		assertTrue(r0.contains(6));
+		assertEquals(3, r0.size());
 
 		assertTrue(true);
 	}

@@ -47,6 +47,8 @@ public class Edge implements Searchable {
 		char[] s = t.getString(stringIndex);
 
 		for (int j = beginIndex; j <= endIndex; j++) {
+			if (i >= q.length) break;
+
 			if (s[j] != q[i]) {
 				if (k > 0)  k--;
 				else    	break;

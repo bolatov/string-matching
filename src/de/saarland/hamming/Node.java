@@ -474,7 +474,7 @@ public class Node implements Searchable {
 							results.addAll(type1Results);
 						}
 
-						if (node.groupType2 != null) {
+						if (node.groupType2 != null && i+1 < q.length) {
 							Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
 							results.addAll(type2Results);
 						}
@@ -488,7 +488,7 @@ public class Node implements Searchable {
 						queue.add(newQuery);
 						edge = node.heavyEdge;
 
-						if (node.groupType2 != null) {
+						if (node.groupType2 != null && i+1 < q.length) {
 							Set<Integer> type2Results = node.groupType2.search(q, i+1, k, null);    // todo next()
 							results.addAll(type2Results);
 						}
@@ -514,13 +514,7 @@ public class Node implements Searchable {
 									if (node.depth > 0) {
 										Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
 										Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
-
-//										for (int res : type1Results) {
-//											Logger.log(TAG, "              res:" + res);
-//										}
-//										Logger.log(TAG, String.format("t1: res.size() before = %d", results.size()));
 										results.addAll(type1Results);
-//										Logger.log(TAG, String.format("t1: res.size() after = %d", results.size()));
 
 									}
 
@@ -528,13 +522,7 @@ public class Node implements Searchable {
 									if (node.groupType2 != null) {
 										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
 										Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
-	//									Set<Integer> type2Results = node.groupType2.search(q, i, k-1, String.valueOf(ch));    // todo next()
-//										for (int res : type2Results) {
-//											Logger.log(TAG, "              res:" + res);
-//										}
-//										Logger.log(TAG, String.format("t2: res.size() before = %d", results.size()));
 										results.addAll(type2Results);
-//										Logger.log(TAG, String.format("t2: res.size() after = %d", results.size()));
 									} else {
 										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
 									}
