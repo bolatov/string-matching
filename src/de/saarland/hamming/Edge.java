@@ -1,7 +1,5 @@
 package de.saarland.hamming;
 
-import de.saarland.util.Logger;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,7 +9,7 @@ import java.util.Set;
  *         Time: 1:15 PM
  */
 public class Edge implements Searchable {
-	private static final String TAG = Edge.class.getSimpleName();
+	private static final String TAG = "Ed";//Edge.class.getSimpleName();
 
 	private int stringIndex;
 	private int beginIndex;                    // can't be changed
@@ -23,8 +21,8 @@ public class Edge implements Searchable {
 	 * Constructor
 	 */
 	public Edge(int stringIndex, int beginIndex, int endIndex, Node startNode) {
-		Logger.log(TAG, String.format("Edge() stringIndex=%d, beginIndex=%d, endIndex=%d, startNode=?",
-				stringIndex, beginIndex, endIndex));
+//		Logger.log(TAG, String.format("Edge() stringIndex=%d, beginIndex=%d, endIndex=%d, startNode=?",
+//				stringIndex, beginIndex, endIndex));
 
 		assert stringIndex >= 0;
 		assert beginIndex >= 0;
@@ -69,13 +67,13 @@ public class Edge implements Searchable {
 	}
 
 	public void insert() {
-		Logger.log(TAG, String.format("insert()"));
+//		Logger.log(TAG, String.format("insert()"));
 
 		startNode.addEdge(stringIndex, beginIndex, this);
 	}
 
 	public void remove() {
-		Logger.log(TAG, String.format("remove()"));
+//		Logger.log(TAG, String.format("remove()"));
 
 		startNode.removeEdge(stringIndex, beginIndex);
 	}
@@ -110,7 +108,7 @@ public class Edge implements Searchable {
 	 * @return - new node where edge was splitted
 	 */
 	public Node splitEdge(int position) {
-		Logger.log(TAG, String.format("splitEdge() position=%d", position));
+//		Logger.log(TAG, String.format("splitEdge() position=%d", position));
 
 		assert position > 0;
 		assert beginIndex + position <= endIndex;

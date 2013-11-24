@@ -13,7 +13,7 @@ import java.util.Set;
 public class Trie {
 	private int nodesCount = 0;
 
-	private static final String TAG = Trie.class.getSimpleName();
+	private static final String TAG = "Tr";//Trie.class.getSimpleName();
 	public static final String DOLLAR = "$";
 
 	private List<String> strings;
@@ -21,6 +21,7 @@ public class Trie {
 
 	private int maxK = 0;
 	private boolean isBuilt = false;
+	private int maxStringLength = 0;
 
 	/**
 	 * Constructor
@@ -28,7 +29,7 @@ public class Trie {
 	 * @param strings
 	 */
 	public Trie(List<String> strings) {
-		Logger.log(TAG, String.format("Trie() strings.size=%d", strings.size()));
+//		Logger.log(TAG, String.format("Trie() strings.size=%d", strings.size()));
 
 		this.strings = strings;
 		this.root = new Node(this);
@@ -42,13 +43,15 @@ public class Trie {
 	}
 
 	private void addString(int stringIndex) {
-		Logger.log(TAG, String.format("addString() string=%s", strings.get(stringIndex)));
+//		Logger.log(TAG, String.format("addString() string=%s", strings.get(stringIndex)));
 
 		Node node = root;
 
 		char[] str      = getString(stringIndex);
 		int currBegin   = 0;
 		int currEnd     = str.length - 1;
+
+		maxStringLength = Math.max(maxStringLength, str.length);
 
 		while (true) {
 			Edge edge = node.findEdge(str[currBegin]);
@@ -81,9 +84,15 @@ public class Trie {
 
 	public void buildMismatchesIndex(int k) {
 		if (isBuilt) {
-			Logger.log(TAG, String.format("Warning. Mismatches index is already built for maxK=%d", k));
+			Logger.log(TAG, String.format("Warning. Mismatches index is already built for maxK=%d", maxK));
 			return;
 		}
+
+		if (k > maxStringLength) {
+			Logger.err(TAG, String.format("The longest string in the trie has length=%d", maxStringLength));
+			return;
+		}
+
 		Logger.log(TAG, String.format("buildMismatchesIndex() maxK=%d", k));
 
 		this.maxK = k;
@@ -94,13 +103,19 @@ public class Trie {
 	}
 
 	public Set<Integer> search(String query, int k) {
-		Logger.log(TAG, String.format("search() query=%s, maxK=%d", query, k));
+//		Logger.log(TAG, String.format("search() query=%s, maxK=%d", query, k));
 		if (k > maxK) {
 			Logger.err(TAG, String.format("search(): Queries with distance %d are NOT supported.", k));
 			return null;
 		}
 
 		char[] q = (query + DOLLAR).toCharArray();
+
+		if (q.length > maxStringLength) {
+			Logger.err(TAG, String.format("search(): Length of query %s is longer than any in the trie", String.valueOf(query)));
+			return null;
+		}
+
 		Set<Integer> results = root.search(q, 0, k);
 
 		return results;

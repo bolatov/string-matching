@@ -10,7 +10,7 @@ import java.util.*;
  *         Time: 1:17 PM
  */
 public class GroupNode {
-	private static final String TAG = GroupNode.class.getSimpleName();
+	private static final String TAG = "GN";//GroupNode.class.getSimpleName();
 
 	public static enum GroupType { ONE, TWO}
 
@@ -68,13 +68,13 @@ public class GroupNode {
 	}
 
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
-		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
+//		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
 
-		assert groupNodes != null && groupNodes.size() > 0;
+		assert groupNodes != null;
+		assert groupNodes.size() > 0;
 
 		if (groupNodes.size() == 0) {
 			System.err.println("No error trees in the list.");
-			assert groupNodes.size() > 0;
 			return null;
 		} else if (groupNodes.size() == 1) {
 			return groupNodes.get(0);
@@ -84,7 +84,7 @@ public class GroupNode {
 	}
 
 	private static GroupNode build(List<GroupNode> groupNodes, int p, int r) {
-		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", p, r));
+//		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", p, r));
 
 		GroupType type = groupNodes.get(0).groupType;
 
@@ -114,7 +114,7 @@ public class GroupNode {
 	}
 
 	public Set<Integer> search(char[] q, int i, int k, String id) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
+//		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
 
 		assert q != null;
 		assert q.length > 0;
@@ -150,6 +150,8 @@ public class GroupNode {
 	 * HINT: Queries Err(T,v_1),..,Err(T,v_id)
 	 */
 	private Set<Integer> searchTypeOne(char[] q, int i, int k, String id) {
+		Logger.increment();
+		Logger.log(TAG, String.format("searchTypeOne(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
 		GroupNode groupNode = findGroup(id);
 
 		assert groupNode != null;
@@ -174,6 +176,7 @@ public class GroupNode {
 			results.addAll(n.search(q, i, k));
 		}
 
+		Logger.decrement();
 		return results;
 	}
 
@@ -182,11 +185,14 @@ public class GroupNode {
 	 * the one with id='id'
 	 */
 	private Set<Integer> searchTypeTwo(char[] q, int i, int k, String id) {
+		Logger.increment();
+		Logger.log(TAG, String.format("searchTypeTwo(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
 		Set<Integer> results = new HashSet<>();
 
 		GroupNode groupNode = findGroup(id);
 		if (groupNode == null) {
 			groupNode = this;
+			Logger.decrement();
 			return groupNode.getNode().search(q, i, k);
 		}
 
@@ -207,11 +213,13 @@ public class GroupNode {
 			groupNode = parent;
 		}
 
+		Logger.decrement();
 		return results;
 	}
 
 	private GroupNode findGroup(String groupNodeId) {
-		Logger.log(TAG, String.format("findGroup() groupNodeId=%s", groupNodeId));
+		Logger.increment();
+		Logger.log(TAG, String.format("findGroup(): groupNodeId=%s", groupNodeId));
 
 		Queue<GroupNode> queue = new LinkedList<>();
 		queue.add(this);
@@ -219,6 +227,7 @@ public class GroupNode {
 		while (!queue.isEmpty()) {
 			GroupNode gn = queue.remove();
 			if (gn.id != null && gn.id.equals(groupNodeId)) {
+				Logger.decrement();
 				return gn;
 			}
 
@@ -229,14 +238,16 @@ public class GroupNode {
 				queue.add(gn.getRightChild());
 		}
 
+		Logger.decrement();
 		return null;
 	}
 
 	public void buildMismatchesIndex(int k) {
-		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", k));
+		Logger.increment();
+		Logger.log(TAG, String.format("buildMismatchesIndex(): k=%d", k));
 
 		if (k <= 0) {
-			Logger.log(TAG, String.format(" k<=0 Nothing to do here"));
+			Logger.log(TAG, String.format("k<=0 Nothing to do here"));
 //			return;
 		}
 
@@ -247,18 +258,23 @@ public class GroupNode {
 
 		while (!groupNodeQueue.isEmpty()) {
 			GroupNode currGroupNode = groupNodeQueue.remove();
-			currGroupNode.getNode().buildMismatchesIndex(k-1);
+			Logger.log(TAG, String.format("buildMismatchesIndex(): k=%d, for groupNode='%s'", k, currGroupNode.id));
+			currGroupNode.getNode().buildMismatchesIndex(k);    // TODO check if it is 'k' OR 'k-1'
 
 			GroupNode currLeftChild = currGroupNode.getLeftChild();
 			GroupNode currRightChild = currGroupNode.getRightChild();
 
+
 			if (currLeftChild != null) {
+				Logger.log(TAG, String.format("buildMismatchesIndex(): L_CHILD k=%d, for groupNode='%s'", k, currLeftChild.id));
 				groupNodeQueue.add(currLeftChild);
 			}
 
 			if (currRightChild != null) {
+				Logger.log(TAG, String.format("buildMismatchesIndex(): R_CHILD k=%d, for groupNode='%s'", k, currRightChild.id));
 				groupNodeQueue.add(currRightChild);
 			}
 		}
+		Logger.decrement();
 	}
 }
