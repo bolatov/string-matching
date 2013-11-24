@@ -47,7 +47,8 @@ public class TestHammingDistanceSimple extends TestCase {
 		r1 = t.search("far", K);
 		assertTrue(r1.contains(0)); // far$     exact
 		assertTrue(r1.contains(1)); // fat$     approximate matching
-		assertEquals(2, r1.size());
+		assertTrue(r1.contains(6)); // fat$     approximate matching
+		assertEquals(3, r1.size());
 
 //		continue on heavy path
 		Set<Integer> r2 = t.search("for", K);
@@ -114,6 +115,20 @@ public class TestHammingDistanceSimple extends TestCase {
 		assertTrue(r0.contains(1));
 		assertTrue(r0.contains(2));
 		assertTrue(r0.contains(6));
+
+		r0 = t.search("Xar", K);
+		assertEquals(6, r0.size());
+		assertTrue(r0.contains(0));     // far
+		assertTrue(r0.contains(1));     // fat
+		assertTrue(r0.contains(3));     // pay .
+		assertTrue(r0.contains(5));     // sat
+		assertTrue(r0.contains(6));     // fax .
+		assertTrue(r0.contains(7));     // par
+
+		r0 = t.search("XXX", K);
+		assertEquals(0, r0.size());
+
+//		r0 = t.search()
 
 		assertTrue(true);
 	}
