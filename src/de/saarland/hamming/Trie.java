@@ -121,43 +121,6 @@ public class Trie {
 		return results;
 	}
 
-//	private Set<Integer> searchSAMPLE(String query, int k) {
-//		Logger.log(TAG, String.format("searchSAMPLE() query=%s, maxK=%d", query, k));
-//
-//		Set<Integer> results = new HashSet<>();
-//
-//		Node node = root;
-//		int i = 0;
-//		char[] q = (query + DOLLAR).toCharArray();
-//		while (i < q.length) {
-//			Edge edge = node.findEdge(q[i]);
-//			if (edge == null) {
-//				// no need to proceed
-//				break;
-//			}
-//
-//			i++;
-//
-//			int stringIndex = edge.getStringIndex();
-//			char[] s = getString(stringIndex);
-//
-//			for (int j = edge.getBeginIndex()+1; j <= edge.getEndIndex(); j++) {
-//				if (i == q.length) {
-//					break;
-//				}
-//				if (s[j] != q[i]) {
-//					return results;
-//				}
-//				i++;
-//			}
-//			node = edge.getEndNode();
-//		}
-//
-//		results.addAll(node.getValues());
-//
-//		return results;
-//	}
-
 	public char[] getString(int index) {
 		return (this.strings.get(index)).toCharArray();
 	}
