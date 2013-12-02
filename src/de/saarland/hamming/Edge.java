@@ -35,6 +35,28 @@ public class Edge implements Searchable {
 		this.endNode = new Node(getStartNode().getTrie());
 	}
 
+//	/**
+//	 * Constructor.
+//	 * Only for Node.deepCopy()
+//	 *
+//	 * @param stringIndex
+//	 * @param beginIndex
+//	 * @param endIndex
+//	 * @param startNode
+//	 * @param endNode
+//	 */
+//	public Edge(int stringIndex, int beginIndex, int endIndex, Node startNode, Node endNode) {
+//		assert stringIndex >= 0;
+//		assert beginIndex >= 0;
+//		assert beginIndex <= endIndex;
+//
+//		this.stringIndex = stringIndex;
+//		this.beginIndex = beginIndex;
+//		this.endIndex = endIndex;
+//		this.startNode = startNode;
+//		this.endNode = endNode;
+//	}
+
 	@Override
 	public Set<Integer> search(char[] q, int i, int k) {
 		assert i >= 0;

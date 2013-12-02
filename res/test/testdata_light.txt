@@ -1,0 +1,6 @@
+1,far
+2,fat
+3,fit
+4,pay
+5,pin
+6,sit

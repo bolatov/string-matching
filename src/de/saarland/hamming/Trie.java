@@ -38,6 +38,8 @@ public class Trie {
 			// make all strings prefix free by adding DOLLAR sign
 			strings.set(i, strings.get(i) + DOLLAR);
 
+//			Logger.log(TAG, String.format("Add string %d %s", i+1, strings.get(i)));
+
 			addString(i);
 		}
 	}
@@ -53,7 +55,8 @@ public class Trie {
 
 		maxStringLength = Math.max(maxStringLength, str.length);
 
-		while (true) {
+		boolean toStop = false;
+		while (!toStop) {
 			Edge edge = node.findEdge(str[currBegin]);
 			if (edge == null) {
 				edge = new Edge(stringIndex, currBegin, currEnd, node);
@@ -77,6 +80,14 @@ public class Trie {
 
 					prevBegin++;
 					currBegin++;
+
+					/**
+					 * There are some duplicates in the test data
+					 */
+					if (prevBegin == currBegin && currBegin == str.length) {
+						node.addValue(stringIndex);
+						toStop = true;
+					}
 				}
 			}
 		}

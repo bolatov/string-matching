@@ -15,24 +15,24 @@ import java.util.Set;
  */
 public class TestCaseFactory {
     // exact matching
-    public final static String EXACT_MATCHING_TEST_DATA_PATH = "resources/test/testdata_exact_matching.txt";
-    public final static String EXACT_MATCHING_TEST_QUERIES_PATH = "resources/test/testqueries_exact_matching.txt";
-    public final static String EXACT_MATCHING_TEST_ANSWERS_PATH = "resources/test/testanswers_exact_matching.txt";
+    public final static String EXACT_MATCHING_TEST_DATA_PATH = "res/test/testdata_exact_matching.txt";
+    public final static String EXACT_MATCHING_TEST_QUERIES_PATH = "res/test/testqueries_exact_matching.txt";
+    public final static String EXACT_MATCHING_TEST_ANSWERS_PATH = "res/test/testanswers_exact_matching.txt";
 
     // wildcards in the pattern
-    public final static String WILDCARDS_IN_THE_PATTERN_TEST_DATA_PATH = "resources/test/testdata_wildcards_in_the_pattern.txt";
-    public final static String WILDCARDS_IN_THE_PATTERN_TEST_QUERIES_PATH = "resources/test/testqueries_wildcards_in_the_pattern.txt";
-    public final static String WILDCARDS_IN_THE_PATTERN_TEST_ANSWERS_PATH = "resources/test/testanswers_wildcards_in_the_pattern.txt";
+    public final static String WILDCARDS_IN_THE_PATTERN_TEST_DATA_PATH = "res/test/testdata_wildcards_in_the_pattern.txt";
+    public final static String WILDCARDS_IN_THE_PATTERN_TEST_QUERIES_PATH = "res/test/testqueries_wildcards_in_the_pattern.txt";
+    public final static String WILDCARDS_IN_THE_PATTERN_TEST_ANSWERS_PATH = "res/test/testanswers_wildcards_in_the_pattern.txt";
 
     // light
-    public final static String LIGHT_TEST_DATA_PATH = "resources/test/testdata_light.txt";
-    public final static String LIGHT_TEST_QUERIES_PATH = "resources/test/testqueries_light.txt";
-    public final static String LIGHT_TEST_ANSWERS_PATH = "resources/test/testanswers_light.txt";
+    public final static String LIGHT_TEST_DATA_PATH = "res/test/testdata_light.txt";
+    public final static String LIGHT_TEST_QUERIES_PATH = "res/test/testqueries_light.txt";
+    public final static String LIGHT_TEST_ANSWERS_PATH = "res/test/testanswers_light.txt";
 
     // hamming distance
-    public final static String HAMMING_DISTANCE_TEST_DATA_PATH = "resources/test/testdata_hamming_distance.txt";
-    public final static String HAMMING_DISTANCE_TEST_QUERIES_PATH = "resources/test/testqueries_hamming_distance.txt";
-    public final static String HAMMING_DISTANCE_TEST_ANSWERS_PATH = "resources/test/testanswers_hamming_distance.txt";
+    public final static String HAMMING_DISTANCE_TEST_DATA_PATH = "res/test/simple_testdata.txt";
+    public final static String HAMMING_DISTANCE_TEST_QUERIES_PATH = "res/test/simple_testqueries.txt";
+    public final static String HAMMING_DISTANCE_TEST_ANSWERS_PATH = "res/test/simple_testanswers.txt";
 
 
 

@@ -128,7 +128,7 @@ public class Node implements Searchable {
 				GroupNode type2GroupNode = current.prepareType2GroupNode();
 				current.groupType2 = type2GroupNode;
 
-				if (k-1 > 0) {
+				if (k-1 > 0 && type2GroupNode != null) {
 					type2GroupNode.buildMismatchesIndex(k-1);
 				}
 
