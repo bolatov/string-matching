@@ -2,6 +2,7 @@ package de.saarland.hamming;
 
 import de.saarland.util.Logger;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -115,19 +116,22 @@ public class Trie {
 
 	public Set<Integer> search(String query, int k) {
 //		Logger.log(TAG, String.format("search() query=%s, maxK=%d", query, k));
+
+		Set<Integer> results = new HashSet<>();
+
 		if (k > maxK) {
 			Logger.err(TAG, String.format("search(): Queries with distance %d are NOT supported.", k));
-			return null;
+			return results;
 		}
 
 		char[] q = (query + DOLLAR).toCharArray();
 
 		if (q.length > maxStringLength) {
 			Logger.err(TAG, String.format("search(): Length of query %s is longer than any in the trie", String.valueOf(query)));
-			return null;
+			return results;
 		}
 
-		Set<Integer> results = root.search(q, 0, k);
+		results.addAll(root.search(q, 0, k));
 
 		return results;
 	}

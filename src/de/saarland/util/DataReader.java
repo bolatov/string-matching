@@ -10,15 +10,15 @@ import java.util.*;
  */
 public class DataReader {
 
-	public static void main(String[] args) {
-//		File dataFile = new File("res/hamming/geonames_testdata.csv");
+	public static void main(String[] args) throws IOException {
+//		File dataFile = new File("res/hamming/geonames_k4_testdata.csv");
 //		List<Data> data = readDataAsData(dataFile);
 //		for (int i = 0; i < 10; i++) {
 //			Data d = data.get(i);
 //			System.out.printf("%d,%s\n",d.id,d.data);
 //		}
 
-//		File answersFile = new File("res/hamming/geonames_testanswers.csv");
+//		File answersFile = new File("res/hamming/geonames_k4_testanswers.csv");
 //		List<Answer> answers = readAnswers(answersFile);
 //		for (int i = 0; i < 10; i++) {
 //			Answer a = answers.get(i);
@@ -34,6 +34,8 @@ public class DataReader {
 //			}
 //			System.out.println();
 //		}
+
+		prepareAnswers();
 	}
 
 	public static List<Answer> readAnswers(File file) {
@@ -71,16 +73,16 @@ public class DataReader {
 	}
 
 	public static void prepareAnswers() throws IOException {
-		File dataFile = new File("res/hamming/geonames_testdata.csv");
+		File dataFile = new File("res/hamming/geonames_k1_testdata.csv");
 		List<String> data = readDataAsStrings(dataFile);
 //		for (int i = 0; i < data.size(); i++) {
 //			System.out.println(i + ": " + data.get(i));
 //		}
 
-		File queriesFile = new File("res/hamming/geonames_testqueries.csv");
+		File queriesFile = new File("res/hamming/geonames_k1_testqueries.csv");
 		List<Query> queries = readQueries(queriesFile);
 
-		File answersFile = new File("res/hamming/geonames_testanswers.csv");
+		File answersFile = new File("res/hamming/geonames_k1_testanswers.csv");
 		FileWriter fw = new FileWriter(answersFile, true);
 		BufferedWriter bw = new BufferedWriter(fw);
 

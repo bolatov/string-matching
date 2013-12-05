@@ -71,6 +71,10 @@ public class Edge implements Searchable {
 		for (int j = beginIndex; j <= endIndex; j++) {
 			if (i >= q.length) break;
 
+			if (i != j)
+				System.out.printf("\ti=%d, j=%d\n", i, j);
+			assert i == j;
+
 			if (s[j] != q[i]) {
 				if (k > 0)  k--;
 				else    	break;
