@@ -80,6 +80,20 @@ public class GroupNode {
 			return groupNodes.get(0);
 		}
 
+		/**
+		 * Actually it spends less memory if all of the light children are grouped together
+		 */
+		else if (groupNodes.get(0).groupType.equals(GroupType.TWO)) {
+			Node n = groupNodes.get(0).getNode();
+			for (int i = 1; i < groupNodes.size(); i++) {
+				n = Node.mergeNodes(n, groupNodes.get(i).getNode());
+			}
+			GroupNode gn = new GroupNode(null);
+			gn.groupType = GroupType.TWO;
+			gn.node = n;
+			return gn;
+		}
+
 		return build(groupNodes, 0, groupNodes.size() - 1);
 	}
 
@@ -210,6 +224,10 @@ public class GroupNode {
 		Logger.increment();
 //		Logger.log(TAG, String.format("searchTypeTwo(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
 		Set<Integer> results = new HashSet<>();
+
+		/**
+		 * TODO type 2 group tree will have only one node, no need to query and look for the right position in the tree
+		 */
 
 		GroupNode groupNode = findGroup(id);
 		if (groupNode == null) {
