@@ -541,9 +541,9 @@ public class Node implements Searchable {
 										Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
 //
 //										test
-//										if (!type2Results.isEmpty()) {
-//											System.err.println("YES YES YES!!!");
-//										}
+										if (!type2Results.isEmpty()) {
+											System.err.println("YES YES YES!!!  INSIDE");
+										}
 //										end test
 //
 										results.addAll(type2Results);
@@ -569,18 +569,24 @@ public class Node implements Searchable {
 								Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
 								results.addAll(type1Results);
 							}
-						}
+//						}
 							// TODO check if it returns something!!!
 							// NO NEED TO QUERY TYPE 2 GROUP TREES, SINCE QUERY'S LENGTH IS REACHED
-//							if (node.groupType2 != null && k > 0 && forType2Search+1 < q.length) {
-//								Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
+							if (node.groupType2 != null && k > 0 && forType2Search+1 < q.length) {
+								Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
+								//										test
+								if (!type2Results.isEmpty()) {
+									System.err.println("YES YES YES!!!  OUTSIDE");
+								}
+//										end test
 //								for (int res : type2Results) {
 //									Logger.log(TAG, "              res:" + res);
 //								}
 //								Logger.log(TAG, String.format("t2: res.size() before = %d", results.size()));
-//								results.addAll(type2Results);
+								results.addAll(type2Results);
 //								Logger.log(TAG, String.format("t2: res.size() after = %d", results.size()));
-//							}
+							}
+						}
 					}
 
 					node = edge.getEndNode();
