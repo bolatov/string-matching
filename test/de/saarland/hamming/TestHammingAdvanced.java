@@ -114,6 +114,8 @@ public class TestHammingAdvanced extends TestCase {
 		for (DataReader.Query q : queries) {
 			int qid = q.id;
 
+			System.out.printf("Query %d STARTED...\n", qid);
+
 			String pattern = q.pattern;
 			int localK = q.k;
 

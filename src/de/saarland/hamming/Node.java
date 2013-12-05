@@ -462,6 +462,8 @@ public class Node implements Searchable {
 
 					int offset = 0;
 
+					int forType2Search = i;
+
 					char ch = q[i];
 					Edge edge = node.findEdge(ch);
 
@@ -514,7 +516,7 @@ public class Node implements Searchable {
 
 						if (i != j)
 							Logger.err(TAG, String.format("Assertion error\ti=%d, j=%d", i, j));
-//						assert i == j;
+						assert i == j;
 
 						if (i >= q.length) {
 							toContinue = false;
@@ -534,20 +536,20 @@ public class Node implements Searchable {
 									}
 
 									// TODO check if it returns something!!!
-//									if (node.groupType2 != null) {
-//										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-//										Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
+									if (node.groupType2 != null) {
+										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
+										Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
 //
-//										// test
+//										test
 //										if (!type2Results.isEmpty()) {
 //											System.err.println("YES YES YES!!!");
 //										}
-//										// end test
+//										end test
 //
-//										results.addAll(type2Results);
-//									} else {
-//										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
-//									}
+										results.addAll(type2Results);
+									} else {
+										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
+									}
 								}
 								k--;
 							} else {
@@ -567,11 +569,11 @@ public class Node implements Searchable {
 								Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
 								results.addAll(type1Results);
 							}
-
+						}
 							// TODO check if it returns something!!!
 							// NO NEED TO QUERY TYPE 2 GROUP TREES, SINCE QUERY'S LENGTH IS REACHED
-//							if (node.groupType2 != null) {
-//								Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
+//							if (node.groupType2 != null && k > 0 && forType2Search+1 < q.length) {
+//								Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
 //								for (int res : type2Results) {
 //									Logger.log(TAG, "              res:" + res);
 //								}
@@ -579,7 +581,6 @@ public class Node implements Searchable {
 //								results.addAll(type2Results);
 //								Logger.log(TAG, String.format("t2: res.size() after = %d", results.size()));
 //							}
-						}
 					}
 
 					node = edge.getEndNode();
