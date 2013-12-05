@@ -1,5 +1,7 @@
 package de.saarland.hamming;
 
+import de.saarland.util.Logger;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,6 +61,7 @@ public class Edge implements Searchable {
 
 	@Override
 	public Set<Integer> search(char[] q, int i, int k) {
+		Logger.increment();
 		assert i >= 0;
 		assert i < q.length;
 		assert k >= 0;
@@ -72,7 +75,7 @@ public class Edge implements Searchable {
 			if (i >= q.length) break;
 
 			if (i != j)
-				System.out.printf("\ti=%d, j=%d\n", i, j);
+				Logger.err(TAG, String.format("Assertion error \ti=%d, j=%d", i, j));
 			assert i == j;
 
 			if (s[j] != q[i]) {
@@ -83,10 +86,12 @@ public class Edge implements Searchable {
 		}
 
 		if (i > endIndex) {
+			Logger.log(TAG, String.format("i>endIndex where i=%d, endIndex=%d", i, endIndex));
 			Set<Integer> res = endNode.search(q, i, k);
 			results.addAll(res);
 		}
 
+		Logger.decrement();
 		return results;
 	}
 

@@ -133,11 +133,11 @@ public class GroupNode {
 				results = searchTypeOne(q, i, k, id);
 
 				// test
-				s = "";
-				for (int res : results) {
-					s += res + ",";
-				}
-				Logger.log(TAG, String.format("search type 1: %s", s));
+//				s = "";
+//				for (int res : results) {
+//					s += res + ",";
+//				}
+//				Logger.log(TAG, String.format("search type 1: %s", s));
 				// end test
 
 				break;
@@ -145,11 +145,11 @@ public class GroupNode {
 				results = searchTypeTwo(q, i, k, id);
 
 				// test
-				s = "";
-				for (int res : results) {
-					s += res + ",";
-				}
-				Logger.log(TAG, String.format("search type 2: %s", s));
+//				s = "";
+//				for (int res : results) {
+//					s += res + ",";
+//				}
+//				Logger.log(TAG, String.format("search type 2: %s", s));
 				// end test
 
 				break;

@@ -444,6 +444,7 @@ public class Node implements Searchable {
 			assert k >= 0;
 
 			if (iStart == q.length && searchable instanceof Node) {
+				Logger.log(TAG, String.format("WRITING VALUES: iStart==q.length==%d", iStart));
 				results.addAll(((Node) searchable).getValues());
 				continue;
 			}
@@ -511,8 +512,8 @@ public class Node implements Searchable {
 					char[] s = trie.getString(stringIndex);
 					for (int j = edge.getBeginIndex()+offset; j <= edge.getEndIndex(); j++) {
 
-//						if (i != j)
-//							System.out.printf("\ti=%d, j=%d\n", i, j);
+						if (i != j)
+							Logger.err(TAG, String.format("Assertion error\ti=%d, j=%d", i, j));
 //						assert i == j;
 
 						if (i >= q.length) {
@@ -533,13 +534,20 @@ public class Node implements Searchable {
 									}
 
 									// TODO check if it returns something!!!
-									if (node.groupType2 != null) {
-										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-										Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
-										results.addAll(type2Results);
-									} else {
-										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
-									}
+//									if (node.groupType2 != null) {
+//										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
+//										Set<Integer> type2Results = node.groupType2.search(q, i, k-1, null);    // todo next()
+//
+//										// test
+//										if (!type2Results.isEmpty()) {
+//											System.err.println("YES YES YES!!!");
+//										}
+//										// end test
+//
+//										results.addAll(type2Results);
+//									} else {
+//										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
+//									}
 								}
 								k--;
 							} else {
@@ -551,6 +559,7 @@ public class Node implements Searchable {
 					}
 
 					if (i == q.length && !isLengthExceeded) {
+						Logger.log(TAG, String.format("WRITING VALUES: i==q.length==%d", i));
 						results.addAll(edge.getEndNode().values);
 
 						if (!areGroupsQueried) {

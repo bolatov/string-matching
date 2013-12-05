@@ -11,12 +11,12 @@ public class Logger {
 	private Logger() {}
 
 	public static void log(String tag, String msg) {
-//		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg));
+		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg));
 	}
 
 	public static void err(String tag, String msg) {
 //		System.err.println(String.format("%d.\t%s: %s", line++, tag, msg));
-//		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg).toUpperCase());
+		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg).toUpperCase());
 	}
 
 	public static void increment() {
