@@ -30,19 +30,10 @@ public class Node implements Searchable {
 
 		this.trie = trie;
 		this.edges = new HashMap<>();
-		this.values = new HashSet<>();
 	}
 
 	public void addEdge(int stringIndex, int charIndex, Edge edge) {
-//		Logger.log(TAG, String.format("addEdge() stringIndex=%d, charIndex=%d, edge.beginIndex=%d, edge.endIndex=%d",
-//				stringIndex, charIndex, edge.getBeginIndex(), edge.getEndIndex()));
 		char key = charAt(stringIndex, charIndex);
-
-		if (edges.containsKey(key)) {
-			// TODO REMOVE AFTERWARDS
-//			Logger.err(TAG, String.format("addEdge(): Node name=%d already has edge for character=%c", name, key));
-		}
-
 		edges.put(key, edge);
 	}
 
@@ -333,7 +324,7 @@ public class Node implements Searchable {
 
 	private int dfs() {
 		Collection<Edge> outEdges = getEdges();
-		if (outEdges.isEmpty()) {
+		if (isLeaf()) {
 			return 1;
 		} else {
 			int leaves = 0;
@@ -407,9 +398,13 @@ public class Node implements Searchable {
 
 				Node mergedEndNode = merged.findEdge(ch).getEndNode();
 				for (Edge endEdge : mergedSubNode.getEdges()) {
-					mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
+					if (endEdge != null) {
+						mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
+					}
 				}
-				mergedEndNode.addValues(mergedSubNode.getValues());
+				if (mergedSubNode.values != null && !mergedSubNode.values.isEmpty()) {
+					mergedEndNode.addValues(mergedSubNode.values);
+				}
 			} else if (mNextChars.contains(ch)) {
 				Edge edge = m.findEdge(ch).deepCopy(merged);
 				edge.insert();
@@ -419,8 +414,11 @@ public class Node implements Searchable {
 			}
 		}
 
-		merged.addValues(m.values);
-		merged.addValues(n.values);
+//		merged.addValues(m.values);
+//		merged.addValues(n.values);
+
+		if (m.values != null && !m.values.isEmpty()) { merged.addValues(m.values); }
+		if (n.values != null && !n.values.isEmpty()) { merged.addValues(n.values); }
 
 		return merged;
 	}
@@ -445,7 +443,11 @@ public class Node implements Searchable {
 
 			if (iStart == q.length && searchable instanceof Node) {
 				Logger.log(TAG, String.format("WRITING VALUES: iStart==q.length==%d", iStart));
-				results.addAll(((Node) searchable).getValues());
+				Set<Integer> nodeValues = ((Node) searchable).values;
+				if (nodeValues != null && !nodeValues.isEmpty()) {
+					results.addAll(nodeValues);
+					nodeValues = null;
+				}
 				continue;
 			}
 
@@ -562,7 +564,11 @@ public class Node implements Searchable {
 
 					if (i == q.length && !isLengthExceeded) {
 						Logger.log(TAG, String.format("WRITING VALUES: i==q.length==%d", i));
-						results.addAll(edge.getEndNode().values);
+						Set<Integer> endNodeValues = edge.getEndNode().values;
+						if (endNodeValues != null && !endNodeValues.isEmpty()) {
+							results.addAll(endNodeValues);
+							endNodeValues = null;
+						}
 
 						if (!areGroupsQueried) {
 							if (node.depth > 0 && k > 0) {
@@ -631,25 +637,33 @@ public class Node implements Searchable {
 		return heavyEdge;
 	}
 
-	private Collection<Edge> getLightEdges() {
-		Collection<Edge> lightEdges = new LinkedList<>();
-		for (Edge edge : getEdges()) {
-			if (!edge.equals(heavyEdge))
-				lightEdges.add(edge);
-		}
-		return lightEdges;
-	}
+//	private Collection<Edge> getLightEdges() {
+//		Collection<Edge> lightEdges = new LinkedList<>();
+//		for (Edge edge : getEdges()) {
+//			if (edge != null && !edge.equals(heavyEdge))
+//				lightEdges.add(edge);
+//		}
+//		return lightEdges;
+//	}
 
 	public void setHeavyEdge(Edge edge) {
 		this.heavyEdge = edge;
 	}
 
 	public void addValue(int value) {
+		if (this.values == null) {
+			this.values = new HashSet<>();
+		}
 		values.add(value);
 	}
 
-	public void addValues(Set<Integer> values) {
-		this.values.addAll(values);
+	public void addValues(Set<Integer> vs) {
+		if (vs == null || vs.isEmpty()) { return; }
+
+		if (this.values == null) {
+			this.values = new HashSet<>();
+		}
+		this.values.addAll(vs);
 	}
 
 	public Set<Integer> getValues() {
