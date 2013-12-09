@@ -128,7 +128,7 @@ public class GroupNode {
 	}
 
 	public Set<Integer> search(char[] q, int i, int k, String id) {
-		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
+//		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
 
 		assert q != null;
 		assert q.length > 0;
@@ -138,39 +138,9 @@ public class GroupNode {
 //		assert id != null;
 //		assert !"".equals(id);
 
-		Set<Integer> results = null;
-
-		String s = "";
-
-		switch (groupType) {
-			case ONE:
-				results = searchTypeOne(q, i, k, id);
-
-				// test
-//				s = "";
-//				for (int res : results) {
-//					s += res + ",";
-//				}
-//				Logger.log(TAG, String.format("search type 1: %s", s));
-				// end test
-
-				break;
-			case TWO:
-				results = searchTypeTwo(q, i, k, id);
-
-				// test
-//				s = "";
-//				for (int res : results) {
-//					s += res + ",";
-//				}
-//				Logger.log(TAG, String.format("search type 2: %s", s));
-				// end test
-
-				break;
-			default:
-//				results = new HashSet<>();
-				break;
-		}
+		Set<Integer> results = groupType.equals(GroupType.ONE) ?
+				searchTypeOne(q, i, k, id) :
+				searchTypeTwo(q, i, k, id);
 
 		assert results != null;
 
@@ -185,7 +155,7 @@ public class GroupNode {
 	 */
 	private Set<Integer> searchTypeOne(char[] q, int i, int k, String id) {
 		Logger.increment();
-//		Logger.log(TAG, String.format("searchTypeOne(): query=%s, k=%d, groupNodeId='%s'", String.valueOf(q).substring(i), k, id));
+		Logger.log(TAG, String.format("searchTypeOne(): query=%s, k=%d, groupNodeId='%s'", String.valueOf(q).substring(i), k, id));
 		GroupNode groupNode = findGroup(id);
 
 //		assert groupNode != null;
@@ -222,7 +192,7 @@ public class GroupNode {
 	 */
 	private Set<Integer> searchTypeTwo(char[] q, int i, int k, String id) {
 		Logger.increment();
-//		Logger.log(TAG, String.format("searchTypeTwo(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
+		Logger.log(TAG, String.format("searchTypeTwo(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
 		Set<Integer> results = new HashSet<>();
 
 		/**

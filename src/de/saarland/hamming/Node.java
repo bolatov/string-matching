@@ -91,18 +91,17 @@ public class Node implements Searchable {
 		Queue<Node> heavyQueue = new LinkedList<>();
 		heavyQueue.add(this);
 
+		List<GroupNode> onPathVertices = new ArrayList<>();
+
+		Node head;
 		while (!heavyQueue.isEmpty()) {
-			final Node head = heavyQueue.remove();
+			head = heavyQueue.remove();
 
-			List<GroupNode> onPathVertices = new ArrayList<>();
+			onPathVertices.clear();
 			Node current = head;
-
-			int i = 1;
 
 			// Traverse vertices along the heavy path
 			while (!current.isLeaf()) {
-
-//				System.out.println(i++);
 
 				// heavy path heads
 				for (Edge edge : current.getEdges()) {
@@ -116,14 +115,11 @@ public class Node implements Searchable {
 
 				// Set type 2 group tree that are built from off-path vertices
 				Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
-				GroupNode type2GroupNode = current.prepareType2GroupNode();
-				current.groupType2 = type2GroupNode;
+				current.groupType2 = current.prepareType2GroupNode();
 
-				if (k-1 > 0 && type2GroupNode != null) {
-					type2GroupNode.buildMismatchesIndex(k-1);
+				if (k-1 > 0 && current.groupType2 != null) {
+					current.groupType2.buildMismatchesIndex(k - 1);
 				}
-
-
 
 				Node mergedChildren = current.prepareMergedOffPathChildren();
 				if (mergedChildren != null) {
@@ -137,6 +133,9 @@ public class Node implements Searchable {
 
 					onPathVertices.add(onPathVertex);
 				}
+				// clean resources
+				mergedChildren = null;
+
 				// next vertex on the heavy path
 				current = current.getHeavyEdge().getEndNode();
 			}
@@ -165,11 +164,13 @@ public class Node implements Searchable {
 	private Node prepareMergedOffPathChildren() {
 		Node mergedChildren = null;
 
+		Edge edge;
+		Node subNode;
 		for (char nextChar : nextChars()) {
-			Edge edge = findEdge(nextChar);
+			edge = findEdge(nextChar);
 
 			if (!edge.equals(heavyEdge)) {
-				Node subNode = edge.sub();
+				subNode = edge.sub();
 				mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
 			}
 		}
@@ -183,16 +184,20 @@ public class Node implements Searchable {
 
 		List<GroupNode> offPathChildren = new ArrayList<>();
 
+		Edge edge;
+		Node subNode;
+		GroupNode offPathGroupNode;
 		for (char nextChar : nextChars()) {
-			Edge edge = findEdge(nextChar);
+			edge = findEdge(nextChar);
 
 			if (!edge.equals(heavyEdge)) {
-				Node subNode = edge.sub();
+				subNode = edge.sub();
 
 				// type 2
-				GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
+				offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
 				offPathGroupNode.setId(nextChar + "");
 				offPathGroupNode.setNode(subNode);
+
 				offPathChildren.add(offPathGroupNode);
 			}
 		}
@@ -290,10 +295,11 @@ public class Node implements Searchable {
 
 		this.depth = 0;
 
+		Collection<Edge> outEdges;
 		while (!queue.isEmpty()) {
 			Node node = queue.remove();
 			if (!node.isLeaf()) {
-				Collection<Edge> outEdges = node.getEdges();
+				outEdges = node.getEdges();
 				Edge heavy = null;
 				int maxWeight = 0;
 				for (Edge e : outEdges) {
@@ -398,9 +404,7 @@ public class Node implements Searchable {
 
 				Node mergedEndNode = merged.findEdge(ch).getEndNode();
 				for (Edge endEdge : mergedSubNode.getEdges()) {
-					if (endEdge != null) {
-						mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
-					}
+					mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
 				}
 				if (mergedSubNode.values != null && !mergedSubNode.values.isEmpty()) {
 					mergedEndNode.addValues(mergedSubNode.values);
@@ -413,9 +417,6 @@ public class Node implements Searchable {
 				edge.insert();
 			}
 		}
-
-//		merged.addValues(m.values);
-//		merged.addValues(n.values);
 
 		if (m.values != null && !m.values.isEmpty()) { merged.addValues(m.values); }
 		if (n.values != null && !n.values.isEmpty()) { merged.addValues(n.values); }
@@ -489,25 +490,29 @@ public class Node implements Searchable {
 						k--;
 						offset = 1;
 					} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
-						// got away from a heavy path
-						Query newQuery = new Query(edge, q, i, k);
-						queue.add(newQuery);
-						edge = node.heavyEdge;
 
 						if (node.groupType1 != null) {
-							Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+							// QUERY.GETK()
+							Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 							results.addAll(type1Results);
 						}
 
-						if (node.groupType2 != null && i+1 < q.length) {
+						if (node.groupType2 != null && i+1 < q.length) {// && k > 0) {
 							Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
 							results.addAll(type2Results);
 						}
 
-						areGroupsQueried = false;
-						i++;
-						k--;
-						offset = 1;
+//						if (k > 0) {
+							// got away from a heavy path
+							Query newQuery = new Query(edge, q, i, k);
+							queue.add(newQuery);
+							edge = node.heavyEdge;
+
+							areGroupsQueried = false;
+							i++;
+							k--;
+							offset = 1;
+//						}
 					}
 
 					assert k >= 0;
@@ -532,7 +537,8 @@ public class Node implements Searchable {
 									areGroupsQueried = true;
 									if (node.depth > 0 && node.groupType1 != null) {
 										Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
-										Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+										// QUERY.GETK()
+										Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 										results.addAll(type1Results);
 
 									}
@@ -571,8 +577,9 @@ public class Node implements Searchable {
 						}
 
 						if (!areGroupsQueried) {
-							if (node.depth > 0 && k > 0) {
-								Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+							if (node.groupType1 != null && node.depth > 0 && k > 0) {
+								// query.getK()
+								Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 								results.addAll(type1Results);
 							}
 //						}
@@ -580,17 +587,7 @@ public class Node implements Searchable {
 							// NO NEED TO QUERY TYPE 2 GROUP TREES, SINCE QUERY'S LENGTH IS REACHED
 							if (node.groupType2 != null && k > 0 && forType2Search+1 < q.length) {
 								Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
-								//										test
-								if (!type2Results.isEmpty()) {
-									System.err.println("YES YES YES!!!  OUTSIDE");
-								}
-//										end test
-//								for (int res : type2Results) {
-//									Logger.log(TAG, "              res:" + res);
-//								}
-//								Logger.log(TAG, String.format("t2: res.size() before = %d", results.size()));
 								results.addAll(type2Results);
-//								Logger.log(TAG, String.format("t2: res.size() after = %d", results.size()));
 							}
 						}
 					}
