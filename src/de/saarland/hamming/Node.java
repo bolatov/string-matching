@@ -465,7 +465,8 @@ public class Node implements Searchable {
 
 					int offset = 0;
 
-					int forType2Search = i;
+					int iForType2Search = i;
+//					int kForType2Search = k;
 
 					char ch = q[i];
 					Edge edge = node.findEdge(ch);
@@ -478,7 +479,8 @@ public class Node implements Searchable {
 						edge = node.heavyEdge;
 
 						if (node.groupType1 != null) {
-							Set<Integer> type1Results = node.groupType1.search(q, iStart, k-1, String.valueOf(node.depth));
+                            // Query.getK()
+							Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 							results.addAll(type1Results);
 						}
 
@@ -492,7 +494,7 @@ public class Node implements Searchable {
 					} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
 
 						if (node.groupType1 != null) {
-							// QUERY.GETK()
+							// Query.getK()
 							Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 							results.addAll(type1Results);
 						}
@@ -537,7 +539,7 @@ public class Node implements Searchable {
 									areGroupsQueried = true;
 									if (node.depth > 0 && node.groupType1 != null) {
 										Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
-										// QUERY.GETK()
+										// Query.getK()
 										Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
 										results.addAll(type1Results);
 
@@ -546,7 +548,7 @@ public class Node implements Searchable {
 									// TODO check if it returns something!!!
 									if (node.groupType2 != null) {
 										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-										Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
+										Set<Integer> type2Results = node.groupType2.search(q, iForType2Search+1, k-1, null);    // todo next()
 //
 //										test
 										if (!type2Results.isEmpty()) {
@@ -585,8 +587,8 @@ public class Node implements Searchable {
 //						}
 							// TODO check if it returns something!!!
 							// NO NEED TO QUERY TYPE 2 GROUP TREES, SINCE QUERY'S LENGTH IS REACHED
-							if (node.groupType2 != null && k > 0 && forType2Search+1 < q.length) {
-								Set<Integer> type2Results = node.groupType2.search(q, forType2Search+1, k-1, null);    // todo next()
+							if (node.groupType2 != null && k > 0 && iForType2Search+1 < q.length) {
+								Set<Integer> type2Results = node.groupType2.search(q, iForType2Search+1, k-1, null);    // todo next()
 								results.addAll(type2Results);
 							}
 						}
