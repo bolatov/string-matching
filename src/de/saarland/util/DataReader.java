@@ -73,16 +73,17 @@ public class DataReader {
 	}
 
 	public static void prepareAnswers() throws IOException {
-		File dataFile = new File("res/hamming/geonames_k2_testdata.csv");
+        int kValue = 4;
+		File dataFile = new File(String.format("res/hamming/geonames_k%d_testdata.csv", kValue));
 		List<String> data = readDataAsStrings(dataFile);
 //		for (int i = 0; i < data.size(); i++) {
 //			System.out.println(i + ": " + data.get(i));
 //		}
 
-		File queriesFile = new File("res/hamming/geonames_k2_testqueries.csv");
+		File queriesFile = new File(String.format("res/hamming/geonames_k%d_testqueries.csv", kValue));
 		List<Query> queries = readQueries(queriesFile);
 
-		File answersFile = new File("res/hamming/geonames_k2_testanswers.csv");
+		File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", kValue));
 		FileWriter fw = new FileWriter(answersFile, true);
 		BufferedWriter bw = new BufferedWriter(fw);
 
