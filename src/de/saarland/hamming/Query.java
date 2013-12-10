@@ -6,14 +6,14 @@ package de.saarland.hamming;
  *         Time: 3:40 PM
  */
 public class Query {
-	private Searchable searchable;
+	private Node node;
 	private char[] q;
 	private int start;
 	private int k;
 //	private String id;
 
-	public Query(Searchable s, char[] q, int start, int k) {
-		this.searchable = s;
+	public Query(Node n, char[] q, int start, int k) {
+		this.node = n;
 		this.q = q;
 		this.start = start;
 		this.k = k;
@@ -27,12 +27,12 @@ public class Query {
 //		this.id = id;
 //	}
 
-	public Searchable getSearchable() {
-		return searchable;
+	public Node getNode() {
+		return node;
 	}
 
-	public void setSearchable(Searchable searchable) {
-		this.searchable = searchable;
+	public void setNode(Node n) {
+		this.node = n;
 	}
 
 	public char[] getQ() {

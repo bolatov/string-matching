@@ -1,16 +1,11 @@
 package de.saarland.hamming;
 
-import de.saarland.util.Logger;
-
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * @author Almer Bolatov
  *         Date: 10/31/13
  *         Time: 1:15 PM
  */
-public class Edge implements Searchable {
+public class Edge {
 	private static final String TAG = "Ed";//Edge.class.getSimpleName();
 
 	private int stringIndex;
@@ -59,41 +54,41 @@ public class Edge implements Searchable {
 //		this.endNode = endNode;
 //	}
 
-	@Override
-	public Set<Integer> search(char[] q, int i, int k) {
-		Logger.increment();
-		assert i >= 0;
-		assert i < q.length;
-		assert k >= 0;
-
-		Set<Integer> results = new HashSet<>();
-
-		Trie t = startNode.getTrie();
-		char[] s = t.getString(stringIndex);
-
-		for (int j = beginIndex; j <= endIndex; j++) {
-			if (i >= q.length) break;
-
-			if (i != j)
-				Logger.err(TAG, String.format("Assertion error \ti=%d, j=%d", i, j));
-			assert i == j;
-
-			if (s[j] != q[i]) {
-				if (k > 0)  k--;
-				else    	break;
-			}
-			i++;
-		}
-
-		if (i > endIndex) {
-			Logger.log(TAG, String.format("i>endIndex where i=%d, endIndex=%d", i, endIndex));
-			Set<Integer> res = endNode.search(q, i, k);
-			results.addAll(res);
-		}
-
-		Logger.decrement();
-		return results;
-	}
+//	@Override
+//	public Set<Integer> search(char[] q, int i, int k) {
+//		Logger.increment();
+//		assert i >= 0;
+//		assert i < q.length;
+//		assert k >= 0;
+//
+//		Set<Integer> results = new HashSet<>();
+//
+//		Trie t = startNode.getTrie();
+//		char[] s = t.getString(stringIndex);
+//
+//		for (int j = beginIndex; j <= endIndex; j++) {
+//			if (i >= q.length) break;
+//
+//			if (i != j)
+//				Logger.err(TAG, String.format("Assertion error \ti=%d, j=%d", i, j));
+//			assert i == j;
+//
+//			if (s[j] != q[i]) {
+//				if (k > 0)  k--;
+//				else    	break;
+//			}
+//			i++;
+//		}
+//
+//		if (i > endIndex) {
+//			Logger.log(TAG, String.format("i>endIndex where i=%d, endIndex=%d", i, endIndex));
+//			Set<Integer> res = endNode.search(q, i, k);
+//			results.addAll(res);
+//		}
+//
+//		Logger.decrement();
+//		return results;
+//	}
 
 	public int getSpan() {
 		return this.endIndex - this.beginIndex;

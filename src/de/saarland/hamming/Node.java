@@ -1,6 +1,7 @@
 package de.saarland.hamming;
 
 import de.saarland.util.Logger;
+import de.saarland.util.Pair;
 
 import java.util.*;
 
@@ -9,7 +10,7 @@ import java.util.*;
  *         Date: 10/31/13
  *         Time: 1:14 PM
  */
-public class Node implements Searchable {
+public class Node {
 	private static final String TAG = "Nd";//Node.class.getSimpleName();
 
 	private int name;
@@ -38,43 +39,26 @@ public class Node implements Searchable {
 	}
 
 	public char charAt(int stringIndex, int charIndex) {
-//		Logger.log(TAG, String.format("charAt() string=%s, stringIndex=%d, charIndex=%d",
-//				new String(trie.getString(stringIndex)),
-//				stringIndex,
-//				charIndex));
-
-		if (trie == null) {
-			System.err.println("Trie is null here!");
-		}
-
 		return trie.getString(stringIndex)[charIndex];
 	}
 
 	public Edge findEdge(char ch) {
-//		Logger.log(TAG, String.format("findEdge() character=%c", ch));
-
 		return edges.get(ch);
 	}
 
 	public void removeEdge(int stringIndex, int charIndex) {
-//		Logger.log(TAG, String.format("removeEdge() stringIndex=%d, charIndex=%d", stringIndex, charIndex));
 		edges.remove(charAt(stringIndex, charIndex));
 	}
 
-	public void buildMismatchesIndex(int k) {
+	public void buildMismatchesIndex(int distance) {
 		Logger.increment();
-		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", k));
+		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", distance));
 
-		if (k <= 0) {
+		if (distance <= 0) {
 			Logger.log(TAG, String.format(" k<=0 Nothing to do here, node=%d", this.name));
 			Logger.decrement();
 			return;
 		}
-
-		// TODO
-		// possibly no need to do this step for
-		// next iteration of k-1 mismatches building
-		doHeavyPathDecomposition();
 
 		/**
 		 * Traverse each heavy path in a BFS manner each time
@@ -88,14 +72,25 @@ public class Node implements Searchable {
 		 * of a heavy node v_i.
 		 */
 
-		Queue<Node> heavyQueue = new LinkedList<>();
-		heavyQueue.add(this);
+		Queue<Pair<Node, Integer>> heavyQueue = new LinkedList<>();
+		heavyQueue.add(new Pair<>(this, distance));
 
 		List<GroupNode> onPathVertices = new ArrayList<>();
 
-		Node head;
 		while (!heavyQueue.isEmpty()) {
-			head = heavyQueue.remove();
+			Pair<Node, Integer> pair = heavyQueue.remove();
+
+			Node head = pair.getFirst();
+			int k = pair.getSecond();
+
+			Logger.log(TAG, String.format("  heavyQueue.size()=%d", heavyQueue.size()));
+
+			assert k >= 0;
+
+			// check if node has heavy path decomposition
+			if (!head.isLeaf() && head.heavyEdge == null) {
+				head.doHeavyPathDecomposition();
+			}
 
 			onPathVertices.clear();
 			Node current = head;
@@ -107,19 +102,12 @@ public class Node implements Searchable {
 				for (Edge edge : current.getEdges()) {
 					Node headNode = edge.getEndNode();
 					if (!edge.equals(current.heavyEdge) && !headNode.isLeaf()) {
-//						Logger.log(TAG, String.format("buildMismatchesIndex(): add new heavy path head %s",
-//								String.valueOf(charAt(edge.getStringIndex(), edge.getBeginIndex()))));
-						heavyQueue.add(headNode);
+						heavyQueue.add(new Pair<>(headNode, k));
 					}
 				}
 
 				// Set type 2 group tree that are built from off-path vertices
-				Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
 				current.groupType2 = current.prepareType2GroupNode();
-
-				if (k-1 > 0 && current.groupType2 != null) {
-					current.groupType2.buildMismatchesIndex(k - 1);
-				}
 
 				Node mergedChildren = current.prepareMergedOffPathChildren();
 				if (mergedChildren != null) {
@@ -134,7 +122,18 @@ public class Node implements Searchable {
 					onPathVertices.add(onPathVertex);
 				}
 				// clean resources
-				mergedChildren = null;
+//				mergedChildren = null;
+
+				/**
+				 * Recursively build mismatches index on a group trees
+				 */
+				if (k - 1 > 0 && current.groupType2 != null) {
+					for (Node n : current.groupType2.getNodes()) {
+						if (!n.isLeaf()) {
+							heavyQueue.add(new Pair<>(n, k - 1));
+						}
+					}
+				}
 
 				// next vertex on the heavy path
 				current = current.getHeavyEdge().getEndNode();
@@ -142,7 +141,6 @@ public class Node implements Searchable {
 
 
 			// Set type 1 group tree to vertices along the heavy path
-			Logger.log(TAG, String.format("buildMismatchesIndex(): build type 1 group trees, onPathVertices.size()=%d", onPathVertices.size()));
 			if (!onPathVertices.isEmpty()) {
 				GroupNode type1GroupNode = GroupNode.buildGroup(onPathVertices);
 				Node iteratorNode = head;
@@ -150,11 +148,15 @@ public class Node implements Searchable {
 					iteratorNode.groupType1 = type1GroupNode;
 
 					// next vertex on the heavy path
-					iteratorNode = iteratorNode.getHeavyEdge().getEndNode();
+					iteratorNode = iteratorNode.heavyEdge.getEndNode();
 				}
 
-				if (k-1 > 0) {
-					type1GroupNode.buildMismatchesIndex(k-1);
+				if (k - 1 > 0) {
+					for (Node n : type1GroupNode.getNodes()) {
+						if (!n.isLeaf()) {
+							heavyQueue.add(new Pair<>(n, k - 1));
+						}
+					}
 				}
 			}
 		}
@@ -164,13 +166,11 @@ public class Node implements Searchable {
 	private Node prepareMergedOffPathChildren() {
 		Node mergedChildren = null;
 
-		Edge edge;
-		Node subNode;
 		for (char nextChar : nextChars()) {
-			edge = findEdge(nextChar);
+			Edge edge = findEdge(nextChar);
 
 			if (!edge.equals(heavyEdge)) {
-				subNode = edge.sub();
+				Node subNode = edge.sub();
 				mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
 			}
 		}
@@ -180,21 +180,18 @@ public class Node implements Searchable {
 
 	private GroupNode prepareType2GroupNode() {
 		Logger.increment();
-		Logger.log(TAG, "prepareType2GroupNode()");
+//		Logger.log(TAG, "prepareType2GroupNode()");
 
 		List<GroupNode> offPathChildren = new ArrayList<>();
 
-		Edge edge;
-		Node subNode;
-		GroupNode offPathGroupNode;
 		for (char nextChar : nextChars()) {
-			edge = findEdge(nextChar);
+			Edge edge = findEdge(nextChar);
 
 			if (!edge.equals(heavyEdge)) {
-				subNode = edge.sub();
+				Node subNode = edge.sub();
 
 				// type 2
-				offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
+				GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
 				offPathGroupNode.setId(nextChar + "");
 				offPathGroupNode.setNode(subNode);
 
@@ -202,23 +199,13 @@ public class Node implements Searchable {
 			}
 		}
 
-		// Set type 2 group tree that are built from off-path vertices
-//		Logger.log(TAG, String.format("buildMismatchesIndex(): build type 2 group trees"));
-//		GroupNode type2GroupNode = GroupNode.buildGroup(offPathChildren);
-
-//		return type2GroupNode;
-
 		Logger.decrement();
-		if (offPathChildren.isEmpty()) {
-			return null;
-		} else {
-			return GroupNode.buildGroup(offPathChildren);
-		}
+		return offPathChildren.isEmpty() ? null : GroupNode.buildGroup(offPathChildren);
 	}
 
 	private Node prepareErrTree(final Node head, final Node mergedChildren) {
 		Logger.increment();
-		Logger.log(TAG, "prepareErrTree()");
+//		Logger.log(TAG, "prepareErrTree()");
 
 		Edge lastEdge = null;
 
@@ -418,13 +405,16 @@ public class Node implements Searchable {
 			}
 		}
 
-		if (m.values != null && !m.values.isEmpty()) { merged.addValues(m.values); }
-		if (n.values != null && !n.values.isEmpty()) { merged.addValues(n.values); }
+		if (m.values != null && !m.values.isEmpty()) {
+			merged.addValues(m.values);
+		}
+		if (n.values != null && !n.values.isEmpty()) {
+			merged.addValues(n.values);
+		}
 
 		return merged;
 	}
 
-	@Override
 	public Set<Integer> search(char[] q, int start, int distance) {
 		Logger.increment();
 		Logger.log(TAG, String.format("search() query=%s, k=%d", String.valueOf(q).substring(start), distance));
@@ -436,15 +426,15 @@ public class Node implements Searchable {
 		while (!queue.isEmpty()) {
 			// traverse along the heavy path
 			Query query = queue.remove();
-			Searchable searchable = query.getSearchable();
+			Node node = query.getNode();
 			int iStart = query.getStart();
 			int k = query.getK();
 
 			assert k >= 0;
 
-			if (iStart == q.length && searchable instanceof Node) {
+			if (iStart == q.length) {// && searchable instanceof Node) {
 				Logger.log(TAG, String.format("WRITING VALUES: iStart==q.length==%d", iStart));
-				Set<Integer> nodeValues = ((Node) searchable).values;
+				Set<Integer> nodeValues = node.values;
 				if (nodeValues != null && !nodeValues.isEmpty()) {
 					results.addAll(nodeValues);
 					nodeValues = null;
@@ -452,150 +442,159 @@ public class Node implements Searchable {
 				continue;
 			}
 
-			if (searchable instanceof Edge) {// || searchable instanceof GroupNode) {
-				results.addAll(searchable.search(q, iStart, k));
-			} else {
-				Node node = (Node) searchable;
-				int i = iStart;
-				boolean toContinue = true;
-				boolean isLengthExceeded = false;
-				boolean areGroupsQueried = false;
-				while (i < q.length && toContinue && !node.isLeaf()) {
-					assert k >= 0;
+			int i = iStart;
+			boolean toContinue = true;
+			boolean isLengthExceeded = false;
+			boolean areGroupsQueried = false;
+			while (i < q.length && toContinue && !node.isLeaf()) {
+				assert k >= 0;
 
-					int offset = 0;
+				int offset = 0;
 
-					int iForType2Search = i;
-//					int kForType2Search = k;
+				int iForType2Search = i;
 
-					char ch = q[i];
-					Edge edge = node.findEdge(ch);
+				char ch = q[i];
+				Edge edge = node.findEdge(ch);
 
-					if (edge == null) {
-						if (k <= 0) break;
+				if (edge == null) {
+					if (k <= 0) break;
 
-						if (node.heavyEdge == null) break;
+					if (node.heavyEdge == null) break;
 
-						edge = node.heavyEdge;
+					edge = node.heavyEdge;
 
-						if (node.groupType1 != null) {
-                            // Query.getK()
-							Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
-							results.addAll(type1Results);
+					if (node.groupType1 != null) {
+						// Query.getK()
+						for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
+							queue.add(new Query(n, q, iStart, query.getK() - 1));
 						}
-
-						if (node.groupType2 != null && i+1 < q.length) {
-							Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
-							results.addAll(type2Results);
-						}
-						i++;
-						k--;
-						offset = 1;
-					} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
-
-						if (node.groupType1 != null) {
-							// Query.getK()
-							Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
-							results.addAll(type1Results);
-						}
-
-						if (node.groupType2 != null && i+1 < q.length) {// && k > 0) {
-							Set<Integer> type2Results = node.groupType2.search(q, i+1, k-1, null);    // todo next()
-							results.addAll(type2Results);
-						}
-
-//						if (k > 0) {
-							// got away from a heavy path
-							Query newQuery = new Query(edge, q, i, k);
-							queue.add(newQuery);
-							edge = node.heavyEdge;
-
-							areGroupsQueried = false;
-							i++;
-							k--;
-							offset = 1;
-//						}
 					}
 
-					assert k >= 0;
+					if (node.groupType2 != null && i + 1 < q.length) {
+						for (Node n : node.groupType2.getSearchableNodes(null)) {
+							queue.add(new Query(n, q, i + 1, k - 1));
+						}
+					}
+					i++;
+					k--;
+					offset = 1;
+				} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
 
-					int stringIndex = edge.getStringIndex();
-					char[] s = trie.getString(stringIndex);
-					for (int j = edge.getBeginIndex()+offset; j <= edge.getEndIndex(); j++) {
+					if (node.groupType1 != null) {
+						// Query.getK()
+						for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
+							queue.add(new Query(n, q, iStart, query.getK() - 1));
+						}
+					}
 
-						if (i != j)
-							Logger.err(TAG, String.format("Assertion error\ti=%d, j=%d", i, j));
-						assert i == j;
-
-						if (i >= q.length) {
-							toContinue = false;
-							isLengthExceeded = true;
-							break;
+					if (node.groupType2 != null && i + 1 < q.length) {// && k > 0) {
+						for (Node n : node.groupType2.getSearchableNodes(null)) {
+							queue.add(new Query(n, q, i + 1, k - 1));
 						}
 
-						if (s[j] != q[i]) {
-							if (k > 0) {
-								if (!areGroupsQueried) {
-									areGroupsQueried = true;
-									if (node.depth > 0 && node.groupType1 != null) {
-										Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
-										// Query.getK()
-										Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
-										results.addAll(type1Results);
+					}
 
-									}
+					int iEdge = i;
+					int kEdge = k;
+					char[] s = trie.getString(edge.getStringIndex());
 
-									// TODO check if it returns something!!!
-									if (node.groupType2 != null) {
-										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-										Set<Integer> type2Results = node.groupType2.search(q, iForType2Search+1, k-1, null);    // todo next()
-//
-//										test
-										if (!type2Results.isEmpty()) {
-											System.err.println("YES YES YES!!!  INSIDE");
-										}
-//										end test
-//
-										results.addAll(type2Results);
-									} else {
-										Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d is NULL", node.name, node.depth));
+					for (int j = edge.getBeginIndex(); j <= edge.getEndIndex(); j++) {
+						if (iEdge >= q.length) break;
+
+						if (iEdge != j)
+							Logger.err(TAG, String.format("Assertion error \tiEdge=%d, j=%d", iEdge, j));
+						assert iEdge == j;
+
+						if (s[j] != q[iEdge]) {
+							if (kEdge > 0) kEdge--;
+							else break;
+						}
+						iEdge++;
+					}
+
+					if (iEdge > edge.getEndIndex()) {
+						queue.add(new Query(edge.getEndNode(), q, iEdge, kEdge));
+					}
+
+					edge = node.heavyEdge;
+
+					areGroupsQueried = false;
+					i++;
+					k--;
+					offset = 1;
+				}
+
+				assert k >= 0;
+
+				int stringIndex = edge.getStringIndex();
+				char[] s = trie.getString(stringIndex);
+				for (int j = edge.getBeginIndex() + offset; j <= edge.getEndIndex(); j++) {
+
+					if (i != j)
+						Logger.err(TAG, String.format("Assertion error\ti=%d, j=%d", i, j));
+					assert i == j;
+
+					if (i >= q.length) {
+						toContinue = false;
+						isLengthExceeded = true;
+						break;
+					}
+
+					if (s[j] != q[i]) {
+						if (k > 0) {
+							if (!areGroupsQueried) {
+								areGroupsQueried = true;
+								if (node.depth > 0 && node.groupType1 != null) {
+									Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
+									// Query.getK()
+									for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
+										queue.add(new Query(n, q, iStart, query.getK() - 1));
 									}
 								}
-								k--;
-							} else {
-								toContinue = false;
-								break;
-							}
-						}
-						i++;
-					}
 
-					if (i == q.length && !isLengthExceeded) {
-						Logger.log(TAG, String.format("WRITING VALUES: i==q.length==%d", i));
-						Set<Integer> endNodeValues = edge.getEndNode().values;
-						if (endNodeValues != null && !endNodeValues.isEmpty()) {
-							results.addAll(endNodeValues);
-							endNodeValues = null;
-						}
+								if (node.groupType2 != null) {
+									Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
+									for (Node n : node.groupType2.getSearchableNodes(null)) {
+										queue.add(new Query(n, q, iForType2Search + 1, k - 1));
+									}
 
-						if (!areGroupsQueried) {
-							if (node.groupType1 != null && node.depth > 0 && k > 0) {
-								// query.getK()
-								Set<Integer> type1Results = node.groupType1.search(q, iStart, query.getK()-1, String.valueOf(node.depth));
-								results.addAll(type1Results);
+								}
 							}
-//						}
-							// TODO check if it returns something!!!
-							// NO NEED TO QUERY TYPE 2 GROUP TREES, SINCE QUERY'S LENGTH IS REACHED
-							if (node.groupType2 != null && k > 0 && iForType2Search+1 < q.length) {
-								Set<Integer> type2Results = node.groupType2.search(q, iForType2Search+1, k-1, null);    // todo next()
-								results.addAll(type2Results);
-							}
+							k--;
+						} else {
+							toContinue = false;
+							break;
 						}
 					}
-
-					node = edge.getEndNode();
+					i++;
 				}
+
+				if (i == q.length && !isLengthExceeded) {
+					Logger.log(TAG, String.format("WRITING VALUES: i==q.length==%d", i));
+					Set<Integer> endNodeValues = edge.getEndNode().values;
+					if (endNodeValues != null && !endNodeValues.isEmpty()) {
+						results.addAll(endNodeValues);
+						endNodeValues = null;
+					}
+
+					if (!areGroupsQueried) {
+						if (node.groupType1 != null && node.depth > 0 && k > 0) {
+							// query.getK()
+							for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
+								queue.add(new Query(n, q, iStart, query.getK() - 1));
+							}
+
+						}
+						if (node.groupType2 != null && k > 0 && iForType2Search + 1 < q.length) {
+							for (Node n : node.groupType2.getSearchableNodes(null)) {
+								queue.add(new Query(n, q, iForType2Search + 1, k - 1));
+							}
+
+						}
+					}
+				}
+
+				node = edge.getEndNode();
 			}
 
 		}
@@ -636,15 +635,6 @@ public class Node implements Searchable {
 		return heavyEdge;
 	}
 
-//	private Collection<Edge> getLightEdges() {
-//		Collection<Edge> lightEdges = new LinkedList<>();
-//		for (Edge edge : getEdges()) {
-//			if (edge != null && !edge.equals(heavyEdge))
-//				lightEdges.add(edge);
-//		}
-//		return lightEdges;
-//	}
-
 	public void setHeavyEdge(Edge edge) {
 		this.heavyEdge = edge;
 	}
@@ -657,7 +647,9 @@ public class Node implements Searchable {
 	}
 
 	public void addValues(Set<Integer> vs) {
-		if (vs == null || vs.isEmpty()) { return; }
+		if (vs == null || vs.isEmpty()) {
+			return;
+		}
 
 		if (this.values == null) {
 			this.values = new HashSet<>();
