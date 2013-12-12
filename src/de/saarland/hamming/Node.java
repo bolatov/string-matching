@@ -22,7 +22,7 @@ public class Node {
 	private Edge heavyEdge;                     // Either Node or Edge
 	private Set<Integer> values;
 	private GroupNode groupType1;               // head element of type 1 group trees
-	private GroupNode groupType2;               // head element of type 2 group trees
+	private Node groupType2;               // head element of type 2 group trees
 
 	/* Constructor */
 	public Node(Trie trie) {
@@ -72,8 +72,11 @@ public class Node {
 		 * of a heavy node v_i.
 		 */
 
+		ObjectPool pool = ObjectPool.getInstance();
+
 		Queue<Pair<Node, Integer>> heavyQueue = new LinkedList<>();
-		heavyQueue.add(new Pair<>(this, distance));
+//		heavyQueue.add(new Pair<>(this, distance));
+		heavyQueue.add(pool.acquirePair(this, distance));
 
 		List<GroupNode> onPathVertices = new ArrayList<>();
 
@@ -82,6 +85,9 @@ public class Node {
 
 			Node head = pair.getFirst();
 			int k = pair.getSecond();
+
+			// return to pool
+			pool.releasePair(pair);
 
 			Logger.log(TAG, String.format("  heavyQueue.size()=%d", heavyQueue.size()));
 
@@ -98,45 +104,45 @@ public class Node {
 			// Traverse vertices along the heavy path
 			while (!current.isLeaf()) {
 
+				Node mergedChildren = null;
+
 				// heavy path heads
 				for (Edge edge : current.getEdges()) {
 					Node headNode = edge.getEndNode();
-					if (!edge.equals(current.heavyEdge) && !headNode.isLeaf()) {
-						heavyQueue.add(new Pair<>(headNode, k));
+					if (!edge.equals(current.heavyEdge)) {
+						if (!headNode.isLeaf()) {
+//							heavyQueue.add(new Pair<>(headNode, k));
+							heavyQueue.add(pool.acquirePair(headNode, k));
+						}
+
+						// Merge off-path children
+						Node subNode = edge.sub();
+						mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
 					}
 				}
 
-				// Set type 2 group tree that are built from off-path vertices
-				current.groupType2 = current.prepareType2GroupNode();
-
-				Node mergedChildren = current.prepareMergedOffPathChildren();
 				if (mergedChildren != null) {
+					// type 2 group trees
+					current.groupType2 = mergedChildren.deepCopy();
+
 					Node errTV = current.prepareErrTree(head, mergedChildren);
 
 					// Create a single group node from an error tree
-					GroupNode.GroupType type = GroupNode.GroupType.ONE;
-					GroupNode onPathVertex = new GroupNode(type);
-					onPathVertex.setId(current.getDepth() + "");
-					onPathVertex.setNode(errTV);
+					GroupNode onPathVertex = new GroupNode(current.depth, errTV);
 
 					onPathVertices.add(onPathVertex);
 				}
 				// clean resources
 //				mergedChildren = null;
 
-				/**
-				 * Recursively build mismatches index on a group trees
-				 */
+				// Recursively build mismatches index on group trees
 				if (k - 1 > 0 && current.groupType2 != null) {
-					for (Node n : current.groupType2.getNodes()) {
-						if (!n.isLeaf()) {
-							heavyQueue.add(new Pair<>(n, k - 1));
-						}
-					}
+//					heavyQueue.add(new Pair<>(current.groupType2, k - 1));
+					heavyQueue.add(pool.acquirePair(current.groupType2, k - 1));
 				}
 
 				// next vertex on the heavy path
-				current = current.getHeavyEdge().getEndNode();
+				current = current.heavyEdge.getEndNode();
 			}
 
 
@@ -144,8 +150,12 @@ public class Node {
 			if (!onPathVertices.isEmpty()) {
 				GroupNode type1GroupNode = GroupNode.buildGroup(onPathVertices);
 				Node iteratorNode = head;
-				while (!iteratorNode.isLeaf()) {
+				while (true) {
 					iteratorNode.groupType1 = type1GroupNode;
+
+					if (iteratorNode.isLeaf()) {
+						break;
+					}
 
 					// next vertex on the heavy path
 					iteratorNode = iteratorNode.heavyEdge.getEndNode();
@@ -154,53 +164,17 @@ public class Node {
 				if (k - 1 > 0) {
 					for (Node n : type1GroupNode.getNodes()) {
 						if (!n.isLeaf()) {
-							heavyQueue.add(new Pair<>(n, k - 1));
+//							heavyQueue.add(new Pair<>(n, k - 1));
+							heavyQueue.add(pool.acquirePair(n, k - 1));
 						}
 					}
 				}
 			}
 		}
-		Logger.decrement();
-	}
 
-	private Node prepareMergedOffPathChildren() {
-		Node mergedChildren = null;
-
-		for (char nextChar : nextChars()) {
-			Edge edge = findEdge(nextChar);
-
-			if (!edge.equals(heavyEdge)) {
-				Node subNode = edge.sub();
-				mergedChildren = (mergedChildren == null) ? subNode : Node.mergeNodes(mergedChildren, subNode);
-			}
-		}
-
-		return mergedChildren;
-	}
-
-	private GroupNode prepareType2GroupNode() {
-		Logger.increment();
-//		Logger.log(TAG, "prepareType2GroupNode()");
-
-		List<GroupNode> offPathChildren = new ArrayList<>();
-
-		for (char nextChar : nextChars()) {
-			Edge edge = findEdge(nextChar);
-
-			if (!edge.equals(heavyEdge)) {
-				Node subNode = edge.sub();
-
-				// type 2
-				GroupNode offPathGroupNode = new GroupNode(GroupNode.GroupType.TWO);
-				offPathGroupNode.setId(nextChar + "");
-				offPathGroupNode.setNode(subNode);
-
-				offPathChildren.add(offPathGroupNode);
-			}
-		}
+		pool.destroyPairs();
 
 		Logger.decrement();
-		return offPathChildren.isEmpty() ? null : GroupNode.buildGroup(offPathChildren);
 	}
 
 	private Node prepareErrTree(final Node head, final Node mergedChildren) {
@@ -262,8 +236,7 @@ public class Node {
 		// end nextChar
 
 		Node endNode = lastEdge.getEndNode();
-		for (char ch : mergedChildren.nextChars()) {
-			final Edge e = mergedChildren.findEdge(ch);
+		for (Edge e : mergedChildren.getEdges()) {
 			endNode.addEdge(e.getStringIndex(), e.getBeginIndex(), e);
 		}
 
@@ -282,11 +255,10 @@ public class Node {
 
 		this.depth = 0;
 
-		Collection<Edge> outEdges;
 		while (!queue.isEmpty()) {
 			Node node = queue.remove();
 			if (!node.isLeaf()) {
-				outEdges = node.getEdges();
+				Collection<Edge> outEdges = node.getEdges();
 				Edge heavy = null;
 				int maxWeight = 0;
 				for (Edge e : outEdges) {
@@ -316,20 +288,19 @@ public class Node {
 	}
 
 	private int dfs() {
-		Collection<Edge> outEdges = getEdges();
 		if (isLeaf()) {
 			return 1;
-		} else {
-			int leaves = 0;
-			for (Edge e : outEdges) {
-				Node endNode = e.getEndNode();
-				int branchLeaves = endNode.dfs();
-				endNode.setWeight(branchLeaves);
-				leaves += branchLeaves;
-			}
-
-			return leaves;
 		}
+
+		int leaves = 0;
+		for (Edge e : getEdges()) {
+			Node endNode = e.getEndNode();
+			int branchLeaves = endNode.dfs();
+			endNode.setWeight(branchLeaves);
+			leaves += branchLeaves;
+		}
+
+		return leaves;
 	}
 
 	public Node deepCopy() {
@@ -338,7 +309,6 @@ public class Node {
 		for (Edge e : getEdges()) {
 			Edge edgeCopy = e.deepCopy(nodeCopy);
 			edgeCopy.setStartNode(nodeCopy);
-//			edgeCopy.insert();
 		}
 
 		nodeCopy.addValues(values);
@@ -417,19 +387,30 @@ public class Node {
 
 	public Set<Integer> search(char[] q, int start, int distance) {
 		Logger.increment();
-		Logger.log(TAG, String.format("search() query=%s, k=%d", String.valueOf(q).substring(start), distance));
+		Logger.log(TAG, String.format("search()"));
 		Set<Integer> results = new HashSet<>();
 
+		ObjectPool pool = ObjectPool.getInstance();
+
 		Queue<Query> queue = new LinkedList<>();
-		queue.add(new Query(this, q, start, distance));
+		queue.add(pool.acquireQuery(this, start, distance));
 
 		while (!queue.isEmpty()) {
 			// traverse along the heavy path
 			Query query = queue.remove();
+
 			Node node = query.getNode();
 			int iStart = query.getStart();
+			int kStart = query.getK();
 			int k = query.getK();
 
+			// return to the pool
+			pool.releaseQuery(query);
+
+			Logger.log(TAG, String.format("Queue.remove() iStart=%d, k=%d, node.name=%d", iStart, k, node.name));
+
+			assert node != null;
+			assert iStart >= 0;
 			assert k >= 0;
 
 			if (iStart == q.length) {// && searchable instanceof Node) {
@@ -465,15 +446,16 @@ public class Node {
 
 					if (node.groupType1 != null) {
 						// Query.getK()
-						for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
-							queue.add(new Query(n, q, iStart, query.getK() - 1));
+						for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
+//							queue.add(new Query(n, iStart, query.getK() - 1));
+							queue.add(pool.acquireQuery(n, iStart, kStart - 1));
+//							Logger.log(TAG, String.format("  1.add node.name=%d", n.name));
 						}
 					}
 
 					if (node.groupType2 != null && i + 1 < q.length) {
-						for (Node n : node.groupType2.getSearchableNodes(null)) {
-							queue.add(new Query(n, q, i + 1, k - 1));
-						}
+//						queue.add(new Query(node.groupType2, i + 1, k - 1));
+						queue.add(pool.acquireQuery(node.groupType2, i + 1, k - 1));
 					}
 					i++;
 					k--;
@@ -482,16 +464,16 @@ public class Node {
 
 					if (node.groupType1 != null) {
 						// Query.getK()
-						for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
-							queue.add(new Query(n, q, iStart, query.getK() - 1));
+						for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
+//							queue.add(new Query(n, iStart, query.getK() - 1));
+							queue.add(pool.acquireQuery(n, iStart, kStart - 1));
+//							Logger.log(TAG, String.format("  3.add node.name=%d", n.name));
 						}
 					}
 
 					if (node.groupType2 != null && i + 1 < q.length) {// && k > 0) {
-						for (Node n : node.groupType2.getSearchableNodes(null)) {
-							queue.add(new Query(n, q, i + 1, k - 1));
-						}
-
+//						queue.add(new Query(node.groupType2, i + 1, k - 1));
+						queue.add(pool.acquireQuery(node.groupType2, i + 1, k - 1));
 					}
 
 					int iEdge = i;
@@ -513,7 +495,9 @@ public class Node {
 					}
 
 					if (iEdge > edge.getEndIndex()) {
-						queue.add(new Query(edge.getEndNode(), q, iEdge, kEdge));
+//						queue.add(new Query(edge.getEndNode(), iEdge, kEdge));
+						queue.add(pool.acquireQuery(edge.getEndNode(), iEdge, kEdge));
+//						Logger.log(TAG, String.format("  5.add node.name=%d", edge.getEndNode().name));
 					}
 
 					edge = node.heavyEdge;
@@ -547,17 +531,17 @@ public class Node {
 								if (node.depth > 0 && node.groupType1 != null) {
 									Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
 									// Query.getK()
-									for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
-										queue.add(new Query(n, q, iStart, query.getK() - 1));
+									for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
+//										queue.add(new Query(n, iStart, query.getK() - 1));
+										queue.add(pool.acquireQuery(n, iStart, kStart - 1));
+//										Logger.log(TAG, String.format("  6.add node.name=%d", n.name));
 									}
 								}
 
 								if (node.groupType2 != null) {
 									Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-									for (Node n : node.groupType2.getSearchableNodes(null)) {
-										queue.add(new Query(n, q, iForType2Search + 1, k - 1));
-									}
-
+//									queue.add(new Query(node.groupType2, iForType2Search + 1, k - 1));
+									queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 								}
 							}
 							k--;
@@ -580,24 +564,25 @@ public class Node {
 					if (!areGroupsQueried) {
 						if (node.groupType1 != null && node.depth > 0 && k > 0) {
 							// query.getK()
-							for (Node n : node.groupType1.getSearchableNodes(String.valueOf(node.depth))) {
-								queue.add(new Query(n, q, iStart, query.getK() - 1));
+							for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
+//								queue.add(new Query(n, iStart, query.getK() - 1));
+								queue.add(pool.acquireQuery(n, iStart, kStart - 1));
+//								Logger.log(TAG, String.format("  8.add node.name=%d", n.name));
 							}
 
 						}
 						if (node.groupType2 != null && k > 0 && iForType2Search + 1 < q.length) {
-							for (Node n : node.groupType2.getSearchableNodes(null)) {
-								queue.add(new Query(n, q, iForType2Search + 1, k - 1));
-							}
-
+//							queue.add(new Query(node.groupType2, iForType2Search + 1, k - 1));
+							queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 						}
 					}
 				}
-
 				node = edge.getEndNode();
 			}
-
 		}
+
+		// Clear the pool from queries
+		pool.destroyQueries();
 
 		Logger.decrement();
 		return results;
@@ -673,11 +658,11 @@ public class Node {
 		this.groupType1 = groupType1;
 	}
 
-	public GroupNode getGroupType2() {
+	public Node getGroupType2() {
 		return groupType2;
 	}
 
-	public void setGroupType2(GroupNode groupType2) {
+	public void setGroupType2(Node groupType2) {
 		this.groupType2 = groupType2;
 	}
 

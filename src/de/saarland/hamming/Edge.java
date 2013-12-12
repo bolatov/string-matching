@@ -32,77 +32,15 @@ public class Edge {
 		this.endNode = new Node(getStartNode().getTrie());
 	}
 
-//	/**
-//	 * Constructor.
-//	 * Only for Node.deepCopy()
-//	 *
-//	 * @param stringIndex
-//	 * @param beginIndex
-//	 * @param endIndex
-//	 * @param startNode
-//	 * @param endNode
-//	 */
-//	public Edge(int stringIndex, int beginIndex, int endIndex, Node startNode, Node endNode) {
-//		assert stringIndex >= 0;
-//		assert beginIndex >= 0;
-//		assert beginIndex <= endIndex;
-//
-//		this.stringIndex = stringIndex;
-//		this.beginIndex = beginIndex;
-//		this.endIndex = endIndex;
-//		this.startNode = startNode;
-//		this.endNode = endNode;
-//	}
-
-//	@Override
-//	public Set<Integer> search(char[] q, int i, int k) {
-//		Logger.increment();
-//		assert i >= 0;
-//		assert i < q.length;
-//		assert k >= 0;
-//
-//		Set<Integer> results = new HashSet<>();
-//
-//		Trie t = startNode.getTrie();
-//		char[] s = t.getString(stringIndex);
-//
-//		for (int j = beginIndex; j <= endIndex; j++) {
-//			if (i >= q.length) break;
-//
-//			if (i != j)
-//				Logger.err(TAG, String.format("Assertion error \ti=%d, j=%d", i, j));
-//			assert i == j;
-//
-//			if (s[j] != q[i]) {
-//				if (k > 0)  k--;
-//				else    	break;
-//			}
-//			i++;
-//		}
-//
-//		if (i > endIndex) {
-//			Logger.log(TAG, String.format("i>endIndex where i=%d, endIndex=%d", i, endIndex));
-//			Set<Integer> res = endNode.search(q, i, k);
-//			results.addAll(res);
-//		}
-//
-//		Logger.decrement();
-//		return results;
-//	}
-
 	public int getSpan() {
 		return this.endIndex - this.beginIndex;
 	}
 
 	public void insert() {
-//		Logger.log(TAG, String.format("insert()"));
-
 		startNode.addEdge(stringIndex, beginIndex, this);
 	}
 
 	public void remove() {
-//		Logger.log(TAG, String.format("remove()"));
-
 		startNode.removeEdge(stringIndex, beginIndex);
 	}
 
@@ -194,12 +132,5 @@ public class Edge {
 
 	public Node getEndNode() {
 		return endNode;
-	}
-
-	/**
-	 * only call it from Node.merge
- 	 */
-	public void setEndNode(Node endNode) {
-		this.endNode = endNode;
 	}
 }

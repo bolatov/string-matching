@@ -309,7 +309,7 @@ public class TestHammingAdvanced extends TestCase {
     }
 
     public void testGeoNamesK4() {
-		System.out.println("START");
+//		System.out.println("START");
 
 		int k = 4;
 		File dataFile = new File(String.format("res/hamming/geonames_k%d_testdata.csv", k));
@@ -327,7 +327,7 @@ public class TestHammingAdvanced extends TestCase {
 		for (DataReader.Query q : queries) {
 			int qid = q.id;
 
-			System.out.printf("Query %d STARTED...\n", qid);
+//			System.out.printf("Query %d STARTED...\n", qid);
 
 			String pattern = q.pattern;
 			int localK = q.k;
@@ -363,10 +363,10 @@ public class TestHammingAdvanced extends TestCase {
 			for (int myAnswer : myAnswers) {
 				assertTrue(correctAnswers.contains(myAnswer+1));
 			}
-			System.out.printf("Query %d PASSED\n", qid);
+//			System.out.printf("Query %d PASSED\n", qid);
 		}
 
-		System.out.println("FINISH");
+//		System.out.println("FINISH");
 
 		assertTrue(true);
 	}

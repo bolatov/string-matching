@@ -12,26 +12,27 @@ import java.util.*;
 public class GroupNode {
 	private static final String TAG = "GN";//GroupNode.class.getSimpleName();
 
-	public static enum GroupType { ONE, TWO}
-
-	private GroupType groupType;
-
-	private String id;
+	private int id;
 
 	private GroupNode leftChild;
 	private GroupNode rightChild;
 	private GroupNode parent;
 	private Node node;
 
-	public GroupNode(GroupType groupType) {
-		this.groupType = groupType;
+	public GroupNode() {
+		this.id = -1;
 	}
 
-	public String getId() {
+	public GroupNode(int id, Node node) {
+		this.id = id;
+		this.node = node;
+	}
+
+	public int getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 
@@ -80,30 +81,12 @@ public class GroupNode {
 			return groupNodes.get(0);
 		}
 
-		/**
-		 * Actually it spends less memory if all of the light children are grouped together
-		 */
-		else if (groupNodes.get(0).groupType.equals(GroupType.TWO)) {
-			Node n = groupNodes.get(0).getNode();
-			for (int i = 1; i < groupNodes.size(); i++) {
-				n = Node.mergeNodes(n, groupNodes.get(i).getNode());
-			}
-			GroupNode gn = new GroupNode(null);
-			gn.groupType = GroupType.TWO;
-			gn.node = n;
-			return gn;
-		}
-
 		return build(groupNodes, 0, groupNodes.size() - 1);
 	}
 
 	private static GroupNode build(List<GroupNode> groupNodes, int p, int r) {
-//		Logger.log(TAG, String.format("build() pIndex=%d, qIndex=%d", p, r));
-
-		GroupType type = groupNodes.get(0).groupType;
-
 		if (p < r) {
-			GroupNode parent =  new GroupNode(type);
+			GroupNode parent =  new GroupNode();
 
 			int q = (p + r) / 2;
 			GroupNode left = build(groupNodes, p, q);
@@ -127,132 +110,28 @@ public class GroupNode {
 		return groupNodes.get(p);
 	}
 
-	public List<Node> getSearchableNodes(String id) {
+	public List<Node> getSearchableNodes(int id) {
 		List<Node> nodes = new LinkedList<>();
 
-		if (this.groupType.equals(GroupType.ONE)) {
-			GroupNode groupNode = findGroup(id);
-//	    assert groupNode != null;
-			if (groupNode != null) {
-				nodes.add(groupNode.node);
-
-				while (groupNode.getParent() != null) {
-					GroupNode parent = groupNode.getParent();
-					GroupNode lChild = parent.getLeftChild();
-					if (lChild != null && !lChild.equals(groupNode)) {   // do not add the same node twice
-						nodes.add(lChild.node);
-					}
-					groupNode = parent;
-				}
-			}
-		} else {
-			nodes.add(this.node);
-		}
-
-		return nodes;
-	}
-
-	/*public Set<Integer> search(char[] q, int i, int k, String id) {
-//		Logger.log(TAG, String.format("search() query=%s, startIndex=%d, groupNodeId=%s", String.valueOf(q), i, id));
-
-		assert q != null;
-		assert q.length > 0;
-		assert i >= 0;
-		assert i < q.length;
-		assert k >= 0;
-//		assert id != null;
-//		assert !"".equals(id);
-
-		Set<Integer> results = groupType.equals(GroupType.ONE) ?
-				searchTypeOne(q, i, k, id) :
-				searchTypeTwo(q, i, k, id);
-
-		assert results != null;
-
-		return results;
-	}*/
-
-	/**
-	 * Search type 1 group trees. Query all group nodes whose
-	 * merge includes precisely Err(T,v_1),..,Err(T,v_(id-1))
-	 *
-	 * HINT: Queries Err(T,v_1),..,Err(T,v_id)
-	 */
-	/*private Set<Integer> searchTypeOne(char[] q, int i, int k, String id) {
-		Logger.increment();
-		Logger.log(TAG, String.format("searchTypeOne(): query=%s, k=%d, groupNodeId='%s'", String.valueOf(q).substring(i), k, id));
 		GroupNode groupNode = findGroup(id);
-
-//		assert groupNode != null;
-
-		Set<Integer> results = new HashSet<>();
-
+//	    assert groupNode != null;
 		if (groupNode != null) {
-			Queue<Node> queue = new LinkedList<>();
-			queue.add(groupNode.node);
+			nodes.add(groupNode.node);
 
 			while (groupNode.getParent() != null) {
 				GroupNode parent = groupNode.getParent();
 				GroupNode lChild = parent.getLeftChild();
 				if (lChild != null && !lChild.equals(groupNode)) {   // do not add the same node twice
-					queue.add(lChild.node);
-				}
-				groupNode = parent;
-			}
-
-			Node n;
-			while (!queue.isEmpty()) {
-				n = queue.remove();
-				results.addAll(n.search(q, i, k));
-			}
-		}
-
-		Logger.decrement();
-		return results;
-	}*/
-
-	/**
-	 * Search type 2 group trees. Query all group nodes, except
-	 * the one with id='id'
-	 */
-	/*private Set<Integer> searchTypeTwo(char[] q, int i, int k, String id) {
-		Logger.increment();
-		Logger.log(TAG, String.format("searchTypeTwo(): query=%s, k=%d, groupNodeId=%s", String.valueOf(q).substring(i), k, id));
-		Set<Integer> results = new HashSet<>();
-
-		*//**
-		 * TODO type 2 group tree will have only one node, no need to query and look for the right position in the tree
-		 *//*
-
-		GroupNode groupNode = findGroup(id);
-		if (groupNode == null) {
-			groupNode = this;
-			results.addAll(groupNode.getNode().search(q, i, k));
-		} else {
-
-			assert groupNode != null;
-
-			Node n;
-			while (groupNode.getParent() != null) {
-				GroupNode parent = groupNode.getParent();
-				GroupNode lChild = parent.getLeftChild();
-				GroupNode rChild = parent.getRightChild();
-				if (!lChild.equals(groupNode)) {
-					n = lChild.getNode();
-					results.addAll(n.search(q, i, k));
-				} else {
-					n = rChild.getNode();
-					results.addAll(n.search(q, i, k));
+					nodes.add(lChild.node);
 				}
 				groupNode = parent;
 			}
 		}
 
-		Logger.decrement();
-		return results;
-	}*/
+		return nodes;
+	}
 
-	private GroupNode findGroup(String groupNodeId) {
+	private GroupNode findGroup(int groupNodeId) {
 		Logger.increment();
 		Logger.log(TAG, String.format("findGroup(): groupNodeId='%s', this.id=%s, \t%s", groupNodeId, this.id, this.toString()));
 
@@ -261,7 +140,8 @@ public class GroupNode {
 
 		while (!queue.isEmpty()) {
 			GroupNode gn = queue.remove();
-			if (gn.id != null && gn.id.equals(groupNodeId)) {
+//			if (gn.id != null && gn.id.equals(groupNodeId)) {
+			if (gn.id == groupNodeId) {
 				Logger.decrement();
 				return gn;
 			}

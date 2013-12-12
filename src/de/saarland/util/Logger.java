@@ -10,13 +10,19 @@ public class Logger {
 	static int indent = 0;
 	private Logger() {}
 
+	private static boolean ON = false;
+
 	public static void log(String tag, String msg) {
-		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg));
+		if (ON) {
+			System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg));
+		}
 	}
 
 	public static void err(String tag, String msg) {
-//		System.err.println(String.format("%d.\t%s: %s", line++, tag, msg));
-		System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg).toUpperCase());
+		if (ON) {
+	//		System.err.println(String.format("%d.\t%s: %s", line++, tag, msg));
+			System.out.println(String.format("%d.\t%s: %s%s", line++, tag, ind(), msg).toUpperCase());
+		}
 	}
 
 	public static void increment() {
