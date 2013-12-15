@@ -17,8 +17,8 @@ public class Trie {
 	private static final String TAG = "Tr";//Trie.class.getSimpleName();
 	public static final String DOLLAR = "$";
 
-	private List<String> strings;
-	private Node root;
+	private final List<String> strings;
+	private final Node root;
 
 	private int maxK = 0;
 	private boolean isBuilt = false;
@@ -36,29 +36,30 @@ public class Trie {
 		this.root = new Node(this);
 
 		for (int i = 0; i < strings.size(); i++) {
-			// make all strings prefix free by adding DOLLAR sign
+			// make all strings prefix free by appending a DOLLAR character
 			strings.set(i, strings.get(i) + DOLLAR);
-
-//			Logger.log(TAG, String.format("Add string %d %s", i+1, strings.get(i)));
-
 			addString(i);
 		}
 	}
 
+	/**
+	 * Add a string to this trie
+	 * @param stringIndex
+	 */
 	private void addString(int stringIndex) {
 //		Logger.log(TAG, String.format("addString() string=%s", strings.get(stringIndex)));
 
 		Node node = root;
 
-		char[] str      = getString(stringIndex);
+		String str      = getString(stringIndex);
 		int currBegin   = 0;
-		int currEnd     = str.length - 1;
+		int currEnd     = str.length() - 1;
 
-		maxStringLength = Math.max(maxStringLength, str.length);
+		maxStringLength = Math.max(maxStringLength, str.length());
 
 		boolean toStop = false;
 		while (!toStop) {
-			Edge edge = node.findEdge(str[currBegin]);
+			Edge edge = node.findEdge(str.charAt(currBegin));
 			if (edge == null) {
 				edge = new Edge(stringIndex, currBegin, currEnd, node);
 				node.addEdge(stringIndex, currBegin, edge);
@@ -70,10 +71,10 @@ public class Trie {
 
 				int prevBegin   = edge.getBeginIndex();
 
-				char[] prevStr  = getString(edge.getStringIndex());
+				String prevStr  = getString(edge.getStringIndex());
 				int minLength = Math.min(edge.getSpan(), currEnd - currBegin);
 				for (int i = 0; i <= minLength; i++) {
-					if (str[currBegin] != prevStr[prevBegin]) {
+					if (str.charAt(currBegin) != prevStr.charAt(prevBegin)) {
 						// split edge at position where two strings have different characters
 						node = edge.splitEdge(i);
 						break;  // break for-loop
@@ -85,7 +86,7 @@ public class Trie {
 					/**
 					 * There are some duplicates in the test data
 					 */
-					if (prevBegin == currBegin && currBegin == str.length) {
+					if (prevBegin == currBegin && currBegin == str.length()) {
 						node.addValue(stringIndex);
 						toStop = true;
 					}
@@ -94,6 +95,10 @@ public class Trie {
 		}
 	}
 
+	/**
+	 * Builds rooted mismatch index.
+	 * @param k - maximum allowed number of mismatches to support
+	 */
 	public void buildMismatchesIndex(int k) {
 		if (isBuilt) {
 			Logger.log(TAG, String.format("Warning. Mismatches index is already built for maxK=%d", maxK));
@@ -114,30 +119,38 @@ public class Trie {
 		this.isBuilt = true;
 	}
 
+	/**
+	 * Search the trie for query matches with allowed hamming
+	 * distance between the query and the match
+	 * @param query - query to search for
+	 * @param k - allowed hamming distance
+	 * @return - the set of position indices in the dictionary
+	 */
 	public Set<Integer> search(String query, int k) {
 //		Logger.log(TAG, String.format("search() query=%s, maxK=%d", query, k));
 
-		Set<Integer> results = new HashSet<>();
-
 		if (k > maxK) {
 			Logger.err(TAG, String.format("search(): Queries with distance %d are NOT supported.", k));
-			return results;
+			return new HashSet<>();
 		}
 
-		char[] q = (query + DOLLAR).toCharArray();
+		String q = query + DOLLAR;
 
-		if (q.length > maxStringLength) {
+		if (q.length() > maxStringLength) {
 			Logger.err(TAG, String.format("search(): Length of query %s is longer than any in the trie", String.valueOf(query)));
-			return results;
+			return new HashSet<>();
 		}
 
-		results.addAll(root.search(q, 0, k));
-
-		return results;
+		return root.search(q, k);
 	}
 
-	public char[] getString(int index) {
-		return (this.strings.get(index)).toCharArray();
+	/**
+	 * Get string stored at specified position
+	 * @param index
+	 * @return
+	 */
+	public String getString(int index) {
+		return this.strings.get(index);
 	}
 
 	/**

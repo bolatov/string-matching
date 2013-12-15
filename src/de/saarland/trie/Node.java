@@ -10,10 +10,10 @@ public class Node {
 
     // Children of this node.
 //    private final Node children[];
-    private Map<Character, Node> children;
+    private final Map<Character, Node> children;
 
     // Values to store on the leaf nodes
-    private Set<Integer> values;
+    private final Set<Integer> values;
 
     // Pointer to a heavy child
     private Character heavyChildPointer;
@@ -26,8 +26,8 @@ public class Node {
      * Constructor
      */
     public Node() {
-        this.children = new HashMap<Character, Node>();
-        this.values = new HashSet<Integer>();
+        this.children = new HashMap<>();
+        this.values = new HashSet<>();
         this.weight = 1;
     }
 
@@ -70,7 +70,7 @@ public class Node {
     }
 
     public List<Node> getLightChildren() {
-        List<Node> lightChildren = new ArrayList<Node>();
+        List<Node> lightChildren = new ArrayList<>();
         for (Character ch : children.keySet()) {
             if (!ch.equals(heavyChildPointer))
                 lightChildren.add(children.get(ch));

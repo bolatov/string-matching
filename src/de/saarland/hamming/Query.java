@@ -12,12 +12,6 @@ public class Query {
 
 	public Query() {}
 
-	public Query(Node n, int start, int k) {
-		this.node = n;
-		this.start = start;
-		this.k = k;
-	}
-
 	public Node getNode() {
 		return node;
 	}

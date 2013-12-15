@@ -2,8 +2,10 @@ package de.saarland.hamming;
 
 import de.saarland.util.Pair;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 /**
  * @author Almer Bolatov
@@ -11,7 +13,10 @@ import java.util.Queue;
  *         Time: 4:33 PM
  */
 public class ObjectPool {
-	private static int SIZE = 300;
+	private static final int SIZE = 300;
+
+//	private int maxQueries;
+//	private int maxPairs;
 
 	private static ObjectPool instance;
 
@@ -20,6 +25,10 @@ public class ObjectPool {
 	private Queue<Pair<Node, Integer>> pairs;
 
 	private Queue<Query> queries;
+
+	private Queue<Set<Character>> characters;
+
+	private Queue<Queue<Node>> nodeLists;
 
 	public static ObjectPool getInstance() {
 		if (instance == null) {
@@ -51,6 +60,7 @@ public class ObjectPool {
 		p.setFirst(null);
 		p.setSecond(null);
 		pairs.add(p);
+//		this.maxPairs = Math.max(maxPairs, pairs.size());
 	}
 
 	public void destroyPairs() {
@@ -82,10 +92,53 @@ public class ObjectPool {
 		q.setStart(-1);
 		q.setK(-1);
 		queries.add(q);
+//		this.maxQueries = Math.max(maxQueries, queries.size());
 	}
 
 	public void destroyQueries() {
 		this.queries.clear();
 		this.queries = null;
+	}
+
+//	public int getMaxQueries() {
+//		return maxQueries;
+//	}
+//
+//	public int getMaxPairs() {
+//		return maxPairs;
+//	}
+
+	public Set<Character> acquireCharacterSet() {
+		if (characters == null) {
+			characters = new LinkedList<>();
+		}
+
+		if (characters.isEmpty()) {
+			characters.add(new HashSet<Character>());
+		}
+
+		return characters.remove();
+	}
+
+	public void releaseCharacterSet(Set<Character> set) {
+		set.clear();
+		characters.add(set);
+	}
+
+	public Queue<Node> acquireNodeList() {
+		if (nodeLists == null) {
+			nodeLists = new LinkedList<>();
+		}
+
+		if (nodeLists.isEmpty()) {
+			nodeLists.add(new LinkedList<Node>());
+		}
+
+		return nodeLists.remove();
+	}
+
+	public void releaseNodeList(Queue<Node> list) {
+		list.clear();
+		nodeLists.add(list);
 	}
 }

@@ -9,7 +9,7 @@ public class Trie {
     public static final Character WILDCARD = '*';
 
     // The root node of the tree.
-    private Node root;
+    private final Node root;
 
     // helper buffer to convert Strings to char arrays
     private char[] charBuffer = new char[0];
@@ -29,7 +29,7 @@ public class Trie {
     private void decompose(Node startNode) {
         countWeights(startNode);
 
-        Queue<Node> queue = new LinkedList<Node>();
+        Queue<Node> queue = new LinkedList<>();
         queue.add(startNode);
 
         while (!queue.isEmpty()) {

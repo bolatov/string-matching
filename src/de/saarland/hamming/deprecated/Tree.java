@@ -243,7 +243,7 @@ public class Tree {
 	private void decompose() {
 		countWeights();
 
-		Queue<Tree> queue = new LinkedList<Tree>();
+		Queue<Tree> queue = new LinkedList<>();
 		queue.add(this);
 
 		while (!queue.isEmpty()) {

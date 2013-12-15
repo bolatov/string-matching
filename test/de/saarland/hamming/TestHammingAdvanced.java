@@ -69,10 +69,11 @@ public class TestHammingAdvanced extends TestCase {
         File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", k));
         List<DataReader.Answer> answers = DataReader.readAnswers(answersFile);
 
+		int i = 1;
         for (DataReader.Query q : queries) {
             int qid = q.id;
 
-            System.out.printf("Query %d STARTED...\n", qid);
+            System.out.printf("%d. Query %d STARTED...\n", i++, qid);
 
             String pattern = q.pattern;
             int localK = q.k;
@@ -118,7 +119,7 @@ public class TestHammingAdvanced extends TestCase {
     }
 
 	public void testGeoNamesK1() {
-        System.out.println("START");
+//        System.out.println("START");
 
         int k = 1;
         File dataFile = new File(String.format("res/hamming/geonames_k%d_testdata.csv", k));
@@ -133,10 +134,11 @@ public class TestHammingAdvanced extends TestCase {
         File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", k));
         List<DataReader.Answer> answers = DataReader.readAnswers(answersFile);
 
+		int i = 1;
         for (DataReader.Query q : queries) {
             int qid = q.id;
 
-            System.out.printf("Query %d STARTED...\n", qid);
+            System.out.printf("%d. Query %d STARTED...\n", i++, qid);
 
             String pattern = q.pattern;
             int localK = q.k;
@@ -172,10 +174,10 @@ public class TestHammingAdvanced extends TestCase {
             for (int myAnswer : myAnswers) {
                 assertTrue(correctAnswers.contains(myAnswer+1));
             }
-            System.out.printf("Query %d PASSED\n", qid);
+//            System.out.printf("Query %d PASSED\n", qid);
         }
 
-        System.out.println("FINISH");
+//        System.out.println("FINISH");
 
         assertTrue(true);
 	}
@@ -196,10 +198,11 @@ public class TestHammingAdvanced extends TestCase {
         File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", k));
         List<DataReader.Answer> answers = DataReader.readAnswers(answersFile);
 
+		int i = 1;
         for (DataReader.Query q : queries) {
             int qid = q.id;
 
-            System.out.printf("Query %d STARTED...\n", qid);
+            System.out.printf("%d. Query %d STARTED...\n", i++, qid);
 
             String pattern = q.pattern;
             int localK = q.k;
@@ -260,10 +263,11 @@ public class TestHammingAdvanced extends TestCase {
         File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", k));
         List<DataReader.Answer> answers = DataReader.readAnswers(answersFile);
 
+	    int i = 1;
         for (DataReader.Query q : queries) {
             int qid = q.id;
 
-            System.out.printf("Query %d STARTED...\n", qid);
+            System.out.printf("%d. Query %d STARTED...\n", i++, qid);
 
             String pattern = q.pattern;
             int localK = q.k;
@@ -324,10 +328,13 @@ public class TestHammingAdvanced extends TestCase {
 		File answersFile = new File(String.format("res/hamming/geonames_k%d_testanswers.csv", k));
 		List<DataReader.Answer> answers = DataReader.readAnswers(answersFile);
 
+	    int i = 1;
+	    int iterations = 40;
+	    while (iterations-- > 0) {
 		for (DataReader.Query q : queries) {
 			int qid = q.id;
 
-//			System.out.printf("Query %d STARTED...\n", qid);
+			System.out.printf("%d. Query %d STARTED...\n", i++, qid);
 
 			String pattern = q.pattern;
 			int localK = q.k;
@@ -363,8 +370,12 @@ public class TestHammingAdvanced extends TestCase {
 			for (int myAnswer : myAnswers) {
 				assertTrue(correctAnswers.contains(myAnswer+1));
 			}
-//			System.out.printf("Query %d PASSED\n", qid);
+//			System.out.printf("Query %d PASSED\n\n", qid);
 		}
+	    }
+//	    ObjectPool pool = ObjectPool.getInstance();
+//	    System.out.println("max created pairs: " + pool.getMaxPairs());
+//	    System.out.println("max created queries: " + pool.getMaxQueries());
 
 //		System.out.println("FINISH");
 

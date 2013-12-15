@@ -5,6 +5,8 @@ import de.saarland.util.Logger;
 import java.util.*;
 
 /**
+ * Logical grouping of nodes in a binary tree manner
+ *
  * @author Almer Bolatov
  *         Date: 10/31/13
  *         Time: 1:17 PM
@@ -19,10 +21,19 @@ public class GroupNode {
 	private GroupNode parent;
 	private Node node;
 
-	public GroupNode() {
+	/**
+	 * Constructor
+	 */
+	private GroupNode() {
 		this.id = -1;
 	}
 
+	/**
+	 * Constructor
+	 * @param id - group node id. At the very bottom level it is equal to
+	 *           a relative node depth. In the upper levels it simply -1
+	 * @param node that is wrapped by this group node
+	 */
 	public GroupNode(int id, Node node) {
 		this.id = id;
 		this.node = node;
@@ -68,6 +79,12 @@ public class GroupNode {
 		this.node = node;
 	}
 
+	/**
+	 * Groups nodes in a binary tree manner. Each node has at most two children,
+	 * all nodes except the root have a pointer to their parent.
+	 * @param groupNodes list of group nodes to build the structure from
+	 * @return the root node of the structure
+	 */
 	public static GroupNode buildGroup(List<GroupNode> groupNodes) {
 //		Logger.log(TAG, String.format("buildGroup() groupNodes.size=%d", groupNodes.size()));
 
@@ -84,6 +101,15 @@ public class GroupNode {
 		return build(groupNodes, 0, groupNodes.size() - 1);
 	}
 
+	/**
+	 * Let n be the length of the groupNodes array. Divide the array into n subarrays, each containing 1 element.
+	 * Repeatedly merge subarrays and make merged node a parent of the merged nodes until there is only 1 subarray
+	 * remaining. This will be the root node of the structure.
+	 * @param groupNodes array of group nodes to build the structure from
+	 * @param p start index
+	 * @param r end index
+	 * @return root node of a created structure
+	 */
 	private static GroupNode build(List<GroupNode> groupNodes, int p, int r) {
 		if (p < r) {
 			GroupNode parent =  new GroupNode();
@@ -91,9 +117,6 @@ public class GroupNode {
 			int q = (p + r) / 2;
 			GroupNode left = build(groupNodes, p, q);
 			GroupNode right = build(groupNodes, q + 1, r);
-
-			// test
-			parent.setId(left.id + right.id);
 
 			left.setParent(parent);
 			right.setParent(parent);
@@ -110,8 +133,13 @@ public class GroupNode {
 		return groupNodes.get(p);
 	}
 
-	public List<Node> getSearchableNodes(int id) {
-		List<Node> nodes = new LinkedList<>();
+	/**
+	 * @param id the relative depth of the node in the heavy path
+	 * @return the group nodes or the merge of group nodes whose id's are less or equal to the
+	 * id given in a parameter
+	 */
+	public Queue<Node> getSearchableNodes(int id) {
+		Queue<Node> nodes = new LinkedList<>();
 
 		GroupNode groupNode = findGroup(id);
 //	    assert groupNode != null;
@@ -131,9 +159,14 @@ public class GroupNode {
 		return nodes;
 	}
 
+	/**
+	 * Find a group node with a specified id
+	 * @param groupNodeId
+	 * @return
+	 */
 	private GroupNode findGroup(int groupNodeId) {
 		Logger.increment();
-		Logger.log(TAG, String.format("findGroup(): groupNodeId='%s', this.id=%s, \t%s", groupNodeId, this.id, this.toString()));
+		Logger.log(TAG, String.format("findGroup(): depth='%d', this=%s", groupNodeId, this.toString()));
 
 		Queue<GroupNode> queue = new LinkedList<>();
 		queue.add(this);
@@ -161,8 +194,8 @@ public class GroupNode {
 	 * Get all nodes that are stored in this group node
 	 * @return
 	 */
-	public List<Node> getNodes() {
-		List<Node> nodes = new LinkedList<>();
+	public Queue<Node> getNodes() {
+		Queue<Node> nodes = new LinkedList<>();
 
 		Queue<GroupNode> queue = new LinkedList<>();
 		queue.add(this);

@@ -13,10 +13,10 @@ import java.util.*;
 public class Node {
 	private static final String TAG = "Nd";//Node.class.getSimpleName();
 
-	private int name;
+	private final int name;
 
-	private Trie trie;
-	private Map<Character, Edge> edges;
+	private final Trie trie;
+	private final Map<Character, Edge> edges;
 	private int weight;                         // number of leaves hanging from this node
 	private int depth;                          // relative depth in the heavy path
 	private Edge heavyEdge;                     // Either Node or Edge
@@ -24,32 +24,63 @@ public class Node {
 	private GroupNode groupType1;               // head element of type 1 group trees
 	private Node groupType2;               // head element of type 2 group trees
 
-	/* Constructor */
+	private final ObjectPool pool;
+
+	/**
+	 *  Constructor
+	 */
 	public Node(Trie trie) {
 		this.name = trie.getNewNodeNumber();
 //		Logger.log(TAG, String.format("Node() name=%d", name));
 
 		this.trie = trie;
 		this.edges = new HashMap<>();
+
+		this.pool = ObjectPool.getInstance();
 	}
 
+	/**
+	 * Add edge to the map
+	 * @param stringIndex
+	 * @param charIndex
+	 * @param edge
+	 */
 	public void addEdge(int stringIndex, int charIndex, Edge edge) {
-		char key = charAt(stringIndex, charIndex);
-		edges.put(key, edge);
+		edges.put(charAt(stringIndex, charIndex), edge);
 	}
 
-	public char charAt(int stringIndex, int charIndex) {
-		return trie.getString(stringIndex)[charIndex];
+	/**
+	 * Character at a position
+	 * @param stringIndex - string index of the word in the dictionary
+	 * @param charIndex - character index in the string
+	 * @return character
+	 */
+	private char charAt(int stringIndex, int charIndex) {
+		return trie.getString(stringIndex).charAt(charIndex);
 	}
 
+	/**
+	 * Find edge that is mapped with character ch
+	 * @param ch - character that points to an edge
+	 * @return edge if edges map contains character ch, null otherwise
+	 */
 	public Edge findEdge(char ch) {
 		return edges.get(ch);
 	}
 
+	/**
+	 * Removes edge from the edges map
+	 * @param stringIndex - string index of the word in the dictionary
+	 * @param charIndex - character index in the string
+	 */
 	public void removeEdge(int stringIndex, int charIndex) {
 		edges.remove(charAt(stringIndex, charIndex));
 	}
 
+	/**
+	 * Builds rooted mismatch index.
+	 * @param distance - maximum allowed number of mismatches to support
+	 */
 	public void buildMismatchesIndex(int distance) {
 		Logger.increment();
 		Logger.log(TAG, String.format("buildMismatchesIndex() k=%d", distance));
@@ -71,8 +102,6 @@ public class Node {
 		 * Build type 2 group trees for the off-path children
 		 * of a heavy node v_i.
 		 */
-
-		ObjectPool pool = ObjectPool.getInstance();
 
 		Queue<Pair<Node, Integer>> heavyQueue = new LinkedList<>();
 //		heavyQueue.add(new Pair<>(this, distance));
@@ -108,8 +137,8 @@ public class Node {
 
 				// heavy path heads
 				for (Edge edge : current.getEdges()) {
-					Node headNode = edge.getEndNode();
 					if (!edge.equals(current.heavyEdge)) {
+						Node headNode = edge.getEndNode();
 						if (!headNode.isLeaf()) {
 //							heavyQueue.add(new Pair<>(headNode, k));
 							heavyQueue.add(pool.acquirePair(headNode, k));
@@ -128,17 +157,14 @@ public class Node {
 					Node errTV = current.prepareErrTree(head, mergedChildren);
 
 					// Create a single group node from an error tree
-					GroupNode onPathVertex = new GroupNode(current.depth, errTV);
+					// and it to the list
+					onPathVertices.add(new GroupNode(current.depth, errTV));
 
-					onPathVertices.add(onPathVertex);
-				}
-				// clean resources
-//				mergedChildren = null;
-
-				// Recursively build mismatches index on group trees
-				if (k - 1 > 0 && current.groupType2 != null) {
-//					heavyQueue.add(new Pair<>(current.groupType2, k - 1));
-					heavyQueue.add(pool.acquirePair(current.groupType2, k - 1));
+					// Recursively build mismatches index on group trees
+					if (k - 1 > 0) {
+//					    heavyQueue.add(new Pair<>(current.groupType2, k - 1));
+						heavyQueue.add(pool.acquirePair(current.groupType2, k - 1));
+					}
 				}
 
 				// next vertex on the heavy path
@@ -177,6 +203,16 @@ public class Node {
 		Logger.decrement();
 	}
 
+	/**
+	 * The ERR(T,v_i) is the concatenation of the following:
+	 *  1. The nodes along the path from v_1 till this v_i
+	 *  2. The character that points to the heavy edge of this node
+	 *  3. The merge of light edges without first characters
+	 *
+	 * @param head - top most node of the heavy path to which this node v_i belongs to
+	 * @param mergedChildren - merged light edges without first characters
+	 * @return errTV
+	 */
 	private Node prepareErrTree(final Node head, final Node mergedChildren) {
 		Logger.increment();
 //		Logger.log(TAG, "prepareErrTree()");
@@ -201,8 +237,7 @@ public class Node {
 				if (prevStr == tStr) {
 					lastEdge.setEndIndex(tEnd);
 				} else {
-					Node lastNode = lastEdge.getEndNode();
-					Edge newLastEdge = new Edge(tStr, tBegin, tEnd, lastNode);
+					Edge newLastEdge = new Edge(tStr, tBegin, tEnd, lastEdge.getEndNode());
 					newLastEdge.insert();
 					lastEdge = newLastEdge;
 				}
@@ -213,9 +248,8 @@ public class Node {
 		}
 		// end str(l)
 
-		final Edge nextHeavyEdge = heavyEdge;
-		final int nextStringIndex = nextHeavyEdge.getStringIndex();
-		final int nextBeginIndex = nextHeavyEdge.getBeginIndex();
+		final int nextStringIndex = heavyEdge.getStringIndex();
+		final int nextBeginIndex = heavyEdge.getBeginIndex();
 
 		// nextChar
 		if (lastEdge == null) {
@@ -227,14 +261,14 @@ public class Node {
 				int newEndIndex = lastEdge.getEndIndex() + 1;
 				lastEdge.setEndIndex(newEndIndex);
 			} else {
-				Node lastNode = lastEdge.getEndNode();
-				Edge newLastEdge = new Edge(nextStringIndex, nextBeginIndex, nextBeginIndex, lastNode);
+				Edge newLastEdge = new Edge(nextStringIndex, nextBeginIndex, nextBeginIndex, lastEdge.getEndNode());
 				newLastEdge.insert();
 				lastEdge = newLastEdge;
 			}
 		}
 		// end nextChar
 
+		// append edges from merged off-path children
 		Node endNode = lastEdge.getEndNode();
 		for (Edge e : mergedChildren.getEdges()) {
 			endNode.addEdge(e.getStringIndex(), e.getBeginIndex(), e);
@@ -244,13 +278,19 @@ public class Node {
 		return errTV;
 	}
 
+	/**
+	 * A node with the highest weight is set as heavy and the rest
+	 * are considered light.
+	 * Since edges are used as outgoing objects, edges are set as heavy and light.
+	 */
 	public void doHeavyPathDecomposition() {
 		Logger.increment();
 		Logger.log(TAG, String.format("doHeavyPathDecomposition()"));
 
 		calculateWeights();
 
-		Queue<Node> queue = new LinkedList<>();
+//		Queue<Node> queue = new LinkedList<>();
+		Queue<Node> queue = pool.acquireNodeList();
 		queue.add(this);
 
 		this.depth = 0;
@@ -258,14 +298,13 @@ public class Node {
 		while (!queue.isEmpty()) {
 			Node node = queue.remove();
 			if (!node.isLeaf()) {
-				Collection<Edge> outEdges = node.getEdges();
 				Edge heavy = null;
 				int maxWeight = 0;
-				for (Edge e : outEdges) {
+				for (Edge e : node.getEdges()) {
 					Node endNode = e.getEndNode();
-					if (endNode.getWeight() > maxWeight) {
+					if (endNode.weight > maxWeight) {
 						heavy = e;
-						maxWeight = endNode.getWeight();
+						maxWeight = endNode.weight;
 					}
 
 					endNode.depth = 0;
@@ -274,19 +313,28 @@ public class Node {
 
 				assert heavy != null;
 
-				node.setHeavyEdge(heavy);
+				node.heavyEdge = heavy;
 				heavy.getEndNode().depth = node.depth + 1;
 			}
 		}
+		pool.releaseNodeList(queue);
 		Logger.decrement();
 	}
 
+	/**
+	 * Sets weights to this and child nodes
+	 * weight - number of leaves hanging out of some node n.
+	 */
 	public void calculateWeights() {
 //		Logger.log(TAG, String.format("calculateWeights()"));
 
 		this.weight = dfs();
 	}
 
+	/**
+	 * Depth-first search traversal.
+	 * @return number of leaves hanging out of this node
+	 */
 	private int dfs() {
 		if (isLeaf()) {
 			return 1;
@@ -296,13 +344,16 @@ public class Node {
 		for (Edge e : getEdges()) {
 			Node endNode = e.getEndNode();
 			int branchLeaves = endNode.dfs();
-			endNode.setWeight(branchLeaves);
+			endNode.weight = branchLeaves;
 			leaves += branchLeaves;
 		}
 
 		return leaves;
 	}
 
+	/**
+	 * @return copy of the current node
+	 */
 	public Node deepCopy() {
 		Node nodeCopy = new Node(trie);
 
@@ -316,13 +367,17 @@ public class Node {
 		return nodeCopy;
 	}
 
+	/**
+	 * Merge two nodes into one
+	 * @param m - node to merge
+	 * @param n - node to merge
+	 * @return - new node that contains both nodes m and n
+	 */
 	public static Node mergeNodes(Node m, Node n) {
-//		Logger.log(TAG, String.format("mergeNodes() m.name=%d, n.name=%d", m.name, n.name));
-
 		Set<Character> mNextChars = m.nextChars();
 		Set<Character> nNextChars = n.nextChars();
 
-		Set<Character> allNextChars = new HashSet<>();
+		Set<Character> allNextChars = ObjectPool.getInstance().acquireCharacterSet(); //new HashSet<>();
 		allNextChars.addAll(mNextChars);
 		allNextChars.addAll(nNextChars);
 
@@ -334,8 +389,8 @@ public class Node {
 				Edge mEdge = m.findEdge(ch).deepCopy(merged);
 				Edge nEdge = n.findEdge(ch).deepCopy(merged);
 
-				char[] mString = t.getString(mEdge.getStringIndex());
-				char[] nString = t.getString(nEdge.getStringIndex());
+				String mString = t.getString(mEdge.getStringIndex());
+				String nString = t.getString(nEdge.getStringIndex());
 
 				int minLength = Math.min(mEdge.getSpan(), nEdge.getSpan());
 
@@ -346,7 +401,7 @@ public class Node {
 				int ni = nEdge.getBeginIndex() + offset;
 				int position = offset;
 				for (int i = offset; i <= minLength; i++, mi++, ni++) {
-					if (mString[mi] != nString[ni]) {
+					if (mString.charAt(mi) != nString.charAt(ni)) {
 						break;
 					}
 					position++;
@@ -382,18 +437,27 @@ public class Node {
 			merged.addValues(n.values);
 		}
 
+		ObjectPool.getInstance().releaseCharacterSet(allNextChars);
+
 		return merged;
 	}
 
-	public Set<Integer> search(char[] q, int start, int distance) {
+	/**
+	 * Search the trie for query matches with allowed hamming
+	 * distance between the query and the match
+	 * @param q - query to search for
+	 * @param distance - allowed hamming distance
+	 * @return - the set of position indices in the dictionary
+	 */
+	public Set<Integer> search(final String q, int distance) {
 		Logger.increment();
 		Logger.log(TAG, String.format("search()"));
 		Set<Integer> results = new HashSet<>();
 
-		ObjectPool pool = ObjectPool.getInstance();
-
 		Queue<Query> queue = new LinkedList<>();
-		queue.add(pool.acquireQuery(this, start, distance));
+		queue.add(pool.acquireQuery(this, 0, distance));
+
+		int queryLength = q.length();
 
 		while (!queue.isEmpty()) {
 			// traverse along the heavy path
@@ -407,18 +471,14 @@ public class Node {
 			// return to the pool
 			pool.releaseQuery(query);
 
-			Logger.log(TAG, String.format("Queue.remove() iStart=%d, k=%d, node.name=%d", iStart, k, node.name));
-
 			assert node != null;
 			assert iStart >= 0;
 			assert k >= 0;
 
-			if (iStart == q.length) {// && searchable instanceof Node) {
-				Logger.log(TAG, String.format("WRITING VALUES: iStart==q.length==%d", iStart));
+			if (iStart == queryLength) {
 				Set<Integer> nodeValues = node.values;
 				if (nodeValues != null && !nodeValues.isEmpty()) {
 					results.addAll(nodeValues);
-					nodeValues = null;
 				}
 				continue;
 			}
@@ -427,67 +487,58 @@ public class Node {
 			boolean toContinue = true;
 			boolean isLengthExceeded = false;
 			boolean areGroupsQueried = false;
-			while (i < q.length && toContinue && !node.isLeaf()) {
+			while (i < queryLength && toContinue && !node.isLeaf()) {
 				assert k >= 0;
 
 				int offset = 0;
 
 				int iForType2Search = i;
 
-				char ch = q[i];
-				Edge edge = node.findEdge(ch);
+				Edge edge = node.findEdge(q.charAt(i));
 
 				if (edge == null) {
-					if (k <= 0) break;
-
-					if (node.heavyEdge == null) break;
-
-					edge = node.heavyEdge;
+					if (k <= 0 || node.heavyEdge == null) {
+						break;
+					}
 
 					if (node.groupType1 != null) {
-						// Query.getK()
 						for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
-//							queue.add(new Query(n, iStart, query.getK() - 1));
 							queue.add(pool.acquireQuery(n, iStart, kStart - 1));
-//							Logger.log(TAG, String.format("  1.add node.name=%d", n.name));
 						}
 					}
 
-					if (node.groupType2 != null && i + 1 < q.length) {
-//						queue.add(new Query(node.groupType2, i + 1, k - 1));
+					if (node.groupType2 != null && i + 1 < queryLength) {
 						queue.add(pool.acquireQuery(node.groupType2, i + 1, k - 1));
 					}
+
+					edge = node.heavyEdge;
 					i++;
 					k--;
 					offset = 1;
 				} else if (node.heavyEdge != null && !edge.equals(node.heavyEdge) && k > 0) {
 
 					if (node.groupType1 != null) {
-						// Query.getK()
 						for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
-//							queue.add(new Query(n, iStart, query.getK() - 1));
 							queue.add(pool.acquireQuery(n, iStart, kStart - 1));
-//							Logger.log(TAG, String.format("  3.add node.name=%d", n.name));
 						}
 					}
 
-					if (node.groupType2 != null && i + 1 < q.length) {// && k > 0) {
-//						queue.add(new Query(node.groupType2, i + 1, k - 1));
+					if (node.groupType2 != null && i + 1 < queryLength) {// && k > 0) {
 						queue.add(pool.acquireQuery(node.groupType2, i + 1, k - 1));
 					}
 
 					int iEdge = i;
 					int kEdge = k;
-					char[] s = trie.getString(edge.getStringIndex());
+					String s = trie.getString(edge.getStringIndex());
 
 					for (int j = edge.getBeginIndex(); j <= edge.getEndIndex(); j++) {
-						if (iEdge >= q.length) break;
+						if (iEdge >= queryLength) break;
 
 						if (iEdge != j)
 							Logger.err(TAG, String.format("Assertion error \tiEdge=%d, j=%d", iEdge, j));
 						assert iEdge == j;
 
-						if (s[j] != q[iEdge]) {
+						if (s.charAt(j) != q.charAt(iEdge)) {
 							if (kEdge > 0) kEdge--;
 							else break;
 						}
@@ -495,9 +546,7 @@ public class Node {
 					}
 
 					if (iEdge > edge.getEndIndex()) {
-//						queue.add(new Query(edge.getEndNode(), iEdge, kEdge));
 						queue.add(pool.acquireQuery(edge.getEndNode(), iEdge, kEdge));
-//						Logger.log(TAG, String.format("  5.add node.name=%d", edge.getEndNode().name));
 					}
 
 					edge = node.heavyEdge;
@@ -511,36 +560,30 @@ public class Node {
 				assert k >= 0;
 
 				int stringIndex = edge.getStringIndex();
-				char[] s = trie.getString(stringIndex);
+				String s = trie.getString(stringIndex);
 				for (int j = edge.getBeginIndex() + offset; j <= edge.getEndIndex(); j++) {
 
 					if (i != j)
 						Logger.err(TAG, String.format("Assertion error\ti=%d, j=%d", i, j));
 					assert i == j;
 
-					if (i >= q.length) {
+					if (i >= queryLength) {
 						toContinue = false;
 						isLengthExceeded = true;
 						break;
 					}
 
-					if (s[j] != q[i]) {
+					if (s.charAt(j) != q.charAt(i)) {
 						if (k > 0) {
 							if (!areGroupsQueried) {
 								areGroupsQueried = true;
 								if (node.depth > 0 && node.groupType1 != null) {
-									Logger.log(TAG, String.format("Type 1 group tree from node=%d, depth=%d", node.name, node.depth));
-									// Query.getK()
 									for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
-//										queue.add(new Query(n, iStart, query.getK() - 1));
 										queue.add(pool.acquireQuery(n, iStart, kStart - 1));
-//										Logger.log(TAG, String.format("  6.add node.name=%d", n.name));
 									}
 								}
 
 								if (node.groupType2 != null) {
-									Logger.log(TAG, String.format("Type 2 group tree from node=%d, depth=%d", node.name, node.depth));
-//									queue.add(new Query(node.groupType2, iForType2Search + 1, k - 1));
 									queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 								}
 							}
@@ -553,26 +596,20 @@ public class Node {
 					i++;
 				}
 
-				if (i == q.length && !isLengthExceeded) {
-					Logger.log(TAG, String.format("WRITING VALUES: i==q.length==%d", i));
+				if (i == queryLength && !isLengthExceeded) {
 					Set<Integer> endNodeValues = edge.getEndNode().values;
 					if (endNodeValues != null && !endNodeValues.isEmpty()) {
 						results.addAll(endNodeValues);
-						endNodeValues = null;
 					}
 
 					if (!areGroupsQueried) {
 						if (node.groupType1 != null && node.depth > 0 && k > 0) {
-							// query.getK()
 							for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
-//								queue.add(new Query(n, iStart, query.getK() - 1));
 								queue.add(pool.acquireQuery(n, iStart, kStart - 1));
-//								Logger.log(TAG, String.format("  8.add node.name=%d", n.name));
 							}
 
 						}
-						if (node.groupType2 != null && k > 0 && iForType2Search + 1 < q.length) {
-//							queue.add(new Query(node.groupType2, iForType2Search + 1, k - 1));
+						if (node.groupType2 != null && k > 0 && iForType2Search + 1 < queryLength) {
 							queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 						}
 					}
@@ -580,9 +617,6 @@ public class Node {
 				node = edge.getEndNode();
 			}
 		}
-
-		// Clear the pool from queries
-		pool.destroyQueries();
 
 		Logger.decrement();
 		return results;
@@ -666,4 +700,7 @@ public class Node {
 		this.groupType2 = groupType2;
 	}
 
+	public int getName() {
+		return name;
+	}
 }

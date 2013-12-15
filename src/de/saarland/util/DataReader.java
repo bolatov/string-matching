@@ -1,5 +1,7 @@
 package de.saarland.util;
 
+import de.saarland.hamming.BruteForce;
+
 import java.io.*;
 import java.util.*;
 
@@ -103,7 +105,7 @@ public class DataReader {
 			Set<Integer> set = new HashSet<>();
 			for (int j = 0; j < data.size(); j++) {
 				String s = data.get(j);
-				if (areHammingEqual(p, s, k)) {
+				if (BruteForce.areHammingEqual(p, s, k)) {
 					set.add(j + 1);
 				}
 			}
@@ -260,21 +262,5 @@ public class DataReader {
 			this.pattern = p;
 			this.k = k;
 		}
-	}
-
-	public static boolean areHammingEqual(String s, String t, int k) {
-		if (s == null || t == null)     return false;
-
-		if (s.length() != t.length())   return false;
-
-		if (k < 0)  return false;
-
-		for (int i = 0; i < s.length(); i++) {
-			if (s.charAt(i) != t.charAt(i)) k--;
-
-			if (k < 0)  return false;
-		}
-
-		return true;
 	}
 }

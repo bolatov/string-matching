@@ -8,19 +8,25 @@ package de.saarland.hamming;
 public class Edge {
 	private static final String TAG = "Ed";//Edge.class.getSimpleName();
 
+	// string index in the strings dictionary
 	private int stringIndex;
+
+	// begin index of the character in the string
 	private int beginIndex;                    // can't be changed
+
+	// end index of the character in the string
 	private int endIndex;
+
+	// start node of this edge
 	private Node startNode;
+
+	// end node of this edge
 	private Node endNode;                    // can't be changed
 
 	/**
 	 * Constructor
 	 */
 	public Edge(int stringIndex, int beginIndex, int endIndex, Node startNode) {
-//		Logger.log(TAG, String.format("Edge() stringIndex=%d, beginIndex=%d, endIndex=%d, startNode=?",
-//				stringIndex, beginIndex, endIndex));
-
 		assert stringIndex >= 0;
 		assert beginIndex >= 0;
 		assert beginIndex <= endIndex;
@@ -96,6 +102,10 @@ public class Edge {
 	}
 
 
+	/**
+	 * @param node start node to append copied edge to
+	 * @return Deep copy of itself
+	 */
 	public Edge deepCopy(Node node) {
 		Edge edgeCopy = new Edge(stringIndex, beginIndex, endIndex, node);
 		edgeCopy.endNode = endNode.deepCopy();
