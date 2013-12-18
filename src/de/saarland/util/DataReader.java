@@ -75,7 +75,7 @@ public class DataReader {
 	}
 
 	public static void prepareAnswers() throws IOException {
-        int kValue = 4;
+        int kValue = 3;
 		File dataFile = new File(String.format("res/hamming/geonames_k%d_testdata.csv", kValue));
 		List<String> data = readDataAsStrings(dataFile);
 //		for (int i = 0; i < data.size(); i++) {
