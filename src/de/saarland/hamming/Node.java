@@ -486,7 +486,7 @@ public class Node {
 			int i = iStart;
 			boolean toContinue = true;
 			boolean isLengthExceeded = false;
-			boolean areGroupsQueried = false;
+//			boolean areGroupsQueried = false;
 			while (i < queryLength && toContinue && !node.isLeaf()) {
 				assert k >= 0;
 
@@ -551,7 +551,7 @@ public class Node {
 
 					edge = node.heavyEdge;
 
-					areGroupsQueried = false;
+//					areGroupsQueried = false;
 					i++;
 					k--;
 					offset = 1;
@@ -575,8 +575,8 @@ public class Node {
 
 					if (s.charAt(j) != q.charAt(i)) {
 						if (k > 0) {
-							if (!areGroupsQueried) {
-								areGroupsQueried = true;
+//							if (!areGroupsQueried) {
+//								areGroupsQueried = true;
 								if (node.depth > 0 && node.groupType1 != null) {
 									for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
 										queue.add(pool.acquireQuery(n, iStart, kStart - 1));
@@ -586,7 +586,7 @@ public class Node {
 								if (node.groupType2 != null) {
 									queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 								}
-							}
+//							}
 							k--;
 						} else {
 							toContinue = false;
@@ -602,7 +602,7 @@ public class Node {
 						results.addAll(endNodeValues);
 					}
 
-					if (!areGroupsQueried) {
+//					if (!areGroupsQueried) {
 						if (node.groupType1 != null && node.depth > 0 && k > 0) {
 							for (Node n : node.groupType1.getSearchableNodes(node.depth)) {
 								queue.add(pool.acquireQuery(n, iStart, kStart - 1));
@@ -612,7 +612,7 @@ public class Node {
 						if (node.groupType2 != null && k > 0 && iForType2Search + 1 < queryLength) {
 							queue.add(pool.acquireQuery(node.groupType2, iForType2Search + 1, k - 1));
 						}
-					}
+//					}
 				}
 				node = edge.getEndNode();
 			}

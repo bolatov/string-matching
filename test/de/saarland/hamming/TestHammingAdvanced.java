@@ -1,8 +1,6 @@
 package de.saarland.hamming;
 
 import de.saarland.util.DataReader;
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.set.TIntSet;
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -267,7 +265,6 @@ public class TestHammingAdvanced extends TestCase {
         List<String> strings = DataReader.readDataAsStrings(dataFile);
 
         Trie t = new Trie(strings);
-//        de.saarland.hamming_trove.Trie t = new de.saarland.hamming_trove.Trie(strings);
         t.buildMismatchesIndex(k);
 
         File queriesFile = new File(String.format("res/hamming/geonames_k%d_testqueries.csv", k));
@@ -286,7 +283,6 @@ public class TestHammingAdvanced extends TestCase {
             int localK = q.k;
 
             Set<Integer> myAnswers = t.search(pattern, localK);
-//            TIntSet myAnswers = t.search(pattern, localK);
             DataReader.Answer answer = answers.get(qid-1);
             if (answer.queryId != qid) {
                 System.err.println("Mismatch!!!");
@@ -299,9 +295,6 @@ public class TestHammingAdvanced extends TestCase {
                 System.out.printf("\t%s    Query\n", pattern);
 //				System.out.printf("\tMyAnswers: ");
                 for (int myanswer : myAnswers) {
-//                TIntIterator iterator = myAnswers.iterator();
-//                while (iterator.hasNext()) {
-//                    int myanswer = iterator.next();
 //					System.out.printf("%d, %s", myanswer+1, strings.get(myanswer));
                     System.out.printf("\t%s     MyAnswer\n", strings.get(myanswer));
                 }
@@ -318,9 +311,6 @@ public class TestHammingAdvanced extends TestCase {
 
             assertEquals(myAnswers.size(), correctAnswers.size());
             for (int myAnswer : myAnswers) {
-//            TIntIterator iterator = myAnswers.iterator();
-//            while (iterator.hasNext()) {
-//                int myAnswer = iterator.next();
                 assertTrue(correctAnswers.contains(myAnswer+1));
             }
             System.out.printf("Query %d PASSED\n", qid);
