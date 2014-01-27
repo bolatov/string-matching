@@ -16,13 +16,19 @@ public class Node {
 	private final int name;
 
 	private final Trie trie;
-	private final Map<Character, Edge> edges;
+//	private final Map<Character, Edge> edges;
+    private final EdgeBag edges;
 	private int weight;                         // number of leaves hanging from this node
 	private int depth;                          // relative depth in the heavy path
-	private Edge heavyEdge;                     // Either Node or Edge
-	private Set<Integer> values;
+	private Edge heavyEdge;                     // Edge which points to the Node with highest weight
+//	private Set<Integer> values;
+    private int[] values;
 	private GroupNode groupType1;               // head element of type 1 group trees
-	private Node groupType2;               // head element of type 2 group trees
+	private Node groupType2;                    // head element of type 2 group trees
+
+    private int lastIdx = 0;
+    private static final int START_SIZE = 0;
+    private static final int INCREMENT = 1;
 
 	private final ObjectPool pool;
 
@@ -34,7 +40,9 @@ public class Node {
 //		Logger.log(TAG, String.format("Node() name=%d", name));
 
 		this.trie = trie;
-		this.edges = new HashMap<>();
+//		this.edges = new HashMap<>();
+        this.edges = new EdgeBag();
+        this.values = new int[START_SIZE];
 
 		this.pool = ObjectPool.getInstance();
 	}
@@ -367,15 +375,90 @@ public class Node {
 		return nodeCopy;
 	}
 
-	/**
-	 * Merge two nodes into one
-	 * @param m - node to merge
-	 * @param n - node to merge
-	 * @return - new node that contains both nodes m and n
-	 */
-	public static Node mergeNodes(Node m, Node n) {
-		Set<Character> mNextChars = m.nextChars();
-		Set<Character> nNextChars = n.nextChars();
+//	/**
+//	 * Merge two nodes into one
+//	 * @param m - node to merge
+//	 * @param n - node to merge
+//	 * @return - new node that contains both nodes m and n
+//	 */
+//	public static Node mergeNodes(Node m, Node n) {
+//		Set<Character> mNextChars = m.nextChars();
+//		Set<Character> nNextChars = n.nextChars();
+//
+//		Set<Character> allNextChars = ObjectPool.getInstance().acquireCharacterSet(); //new HashSet<>();
+//		allNextChars.addAll(mNextChars);
+//		allNextChars.addAll(nNextChars);
+//
+//		Trie t = m.getTrie();
+//		Node merged = new Node(t);
+//
+//		for (Character ch : allNextChars) {
+//			if (mNextChars.contains(ch) && nNextChars.contains(ch)) {
+//				Edge mEdge = m.findEdge(ch).deepCopy(merged);
+//				Edge nEdge = n.findEdge(ch).deepCopy(merged);
+//
+//				String mString = t.getString(mEdge.getStringIndex());
+//				String nString = t.getString(nEdge.getStringIndex());
+//
+//				int minLength = Math.min(mEdge.getSpan(), nEdge.getSpan());
+//
+//				assert minLength >= 0;
+//
+//				int offset = 1;         // can start from the next char since first ones are same
+//				int mi = mEdge.getBeginIndex() + offset;
+//				int ni = nEdge.getBeginIndex() + offset;
+//				int position = offset;
+//				for (int i = offset; i <= minLength; i++, mi++, ni++) {
+//					if (mString.charAt(mi) != nString.charAt(ni)) {
+//						break;
+//					}
+//					position++;
+//				}
+//
+//				// split edge if the place where the characters differ
+//				// is somewhere on the edge. Otherwise take an end node
+//				Node mEndNode = (mi <= mEdge.getEndIndex()) ? mEdge.splitEdge(position) : mEdge.getEndNode();
+//				Node nEndNode = (ni <= nEdge.getEndIndex()) ? nEdge.splitEdge(position) : nEdge.getEndNode();
+//
+//				Node mergedSubNode = Node.mergeNodes(mEndNode, nEndNode);
+//
+//				Node mergedEndNode = merged.findEdge(ch).getEndNode();
+//				for (Edge endEdge : mergedSubNode.getEdges()) {
+//					mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
+//				}
+//				if (mergedSubNode.values != null && !mergedSubNode.values.isEmpty()) {
+//					mergedEndNode.addValues(mergedSubNode.values);
+//				}
+//			} else if (mNextChars.contains(ch)) {
+//				Edge edge = m.findEdge(ch).deepCopy(merged);
+//				edge.insert();
+//			} else {
+//				Edge edge = n.findEdge(ch).deepCopy(merged);
+//				edge.insert();
+//			}
+//		}
+//
+//		if (m.values != null && !m.values.isEmpty()) {
+//			merged.addValues(m.values);
+//		}
+//		if (n.values != null && !n.values.isEmpty()) {
+//			merged.addValues(n.values);
+//		}
+//
+//		ObjectPool.getInstance().releaseCharacterSet(allNextChars);
+//
+//		return merged;
+//	}
+
+    public static Node mergeNodes(Node m, Node n) {
+        Set<Character> mNextChars = ObjectPool.getInstance().acquireCharacterSet();
+        Set<Character> nNextChars = ObjectPool.getInstance().acquireCharacterSet();
+        for (byte b : m.nextChars()) {
+            mNextChars.add((char) b);
+        }
+        for (byte b : n.nextChars()) {
+            nNextChars.add((char) b);
+        }
 
 		Set<Character> allNextChars = ObjectPool.getInstance().acquireCharacterSet(); //new HashSet<>();
 		allNextChars.addAll(mNextChars);
@@ -418,9 +501,7 @@ public class Node {
 				for (Edge endEdge : mergedSubNode.getEdges()) {
 					mergedEndNode.addEdge(endEdge.getStringIndex(), endEdge.getBeginIndex(), endEdge);
 				}
-				if (mergedSubNode.values != null && !mergedSubNode.values.isEmpty()) {
-					mergedEndNode.addValues(mergedSubNode.values);
-				}
+                mEndNode.addValues(mergedSubNode.values);
 			} else if (mNextChars.contains(ch)) {
 				Edge edge = m.findEdge(ch).deepCopy(merged);
 				edge.insert();
@@ -430,14 +511,12 @@ public class Node {
 			}
 		}
 
-		if (m.values != null && !m.values.isEmpty()) {
-			merged.addValues(m.values);
-		}
-		if (n.values != null && !n.values.isEmpty()) {
-			merged.addValues(n.values);
-		}
+        merged.addValues(m.values);
+        merged.addValues(n.values);
 
 		ObjectPool.getInstance().releaseCharacterSet(allNextChars);
+        ObjectPool.getInstance().releaseCharacterSet(mNextChars);
+        ObjectPool.getInstance().releaseCharacterSet(nNextChars);
 
 		return merged;
 	}
@@ -476,10 +555,13 @@ public class Node {
 			assert k >= 0;
 
 			if (iStart == queryLength) {
-				Set<Integer> nodeValues = node.values;
-				if (nodeValues != null && !nodeValues.isEmpty()) {
-					results.addAll(nodeValues);
-				}
+//				Set<Integer> nodeValues = node.values;
+//				if (nodeValues != null && !nodeValues.isEmpty()) {
+//					results.addAll(nodeValues);
+//				}
+                for (int v : node.values) {
+                    results.add(v);
+                }
 				continue;
 			}
 
@@ -597,10 +679,13 @@ public class Node {
 				}
 
 				if (i == queryLength && !isLengthExceeded) {
-					Set<Integer> endNodeValues = edge.getEndNode().values;
-					if (endNodeValues != null && !endNodeValues.isEmpty()) {
-						results.addAll(endNodeValues);
-					}
+//					Set<Integer> endNodeValues = edge.getEndNode().values;
+//					if (endNodeValues != null && !endNodeValues.isEmpty()) {
+//						results.addAll(endNodeValues);
+//					}
+                    for (int v : edge.getEndNode().values) {
+                        results.add(v);
+                    }
 
 //					if (!areGroupsQueried) {
 						if (node.groupType1 != null && node.depth > 0 && k > 0) {
@@ -626,13 +711,20 @@ public class Node {
 		return trie;
 	}
 
-	public Set<Character> nextChars() {
-		return edges.keySet();
-	}
+//	public Set<Character> nextChars() {
+//		return edges.keySet();
+//	}
 
-	public Collection<Edge> getEdges() {
-		return edges.values();
-	}
+    public byte[] nextChars() {
+        return edges.getChars();
+    }
+
+//	public Collection<Edge> getEdges() {
+//		return edges.values();
+//	}
+    public Edge[] getEdges() {
+        return edges.getValues();
+    }
 
 	private int getWeight() {
 		return weight;
@@ -658,30 +750,50 @@ public class Node {
 		this.heavyEdge = edge;
 	}
 
-	public void addValue(int value) {
-		if (this.values == null) {
-			this.values = new HashSet<>();
-		}
-		values.add(value);
-	}
+//	public void addValue(int value) {
+//		if (this.values == null) {
+//			this.values = new HashSet<>();
+//		}
+//		values.add(value);
+//	}
+//
+//	public void addValues(Set<Integer> vs) {
+//		if (vs == null || vs.isEmpty()) {
+//			return;
+//		}
+//
+//		if (this.values == null) {
+//			this.values = new HashSet<>();
+//		}
+//		this.values.addAll(vs);
+//	}
 
-	public void addValues(Set<Integer> vs) {
-		if (vs == null || vs.isEmpty()) {
-			return;
-		}
+    public void addValue(int value) {
+        if (lastIdx == values.length) {
+            int[] copy = new int[values.length + INCREMENT];
+            System.arraycopy(values, 0, copy, 0, values.length);
+            values = copy;
+        }
+        values[lastIdx++] = value;
+    }
 
-		if (this.values == null) {
-			this.values = new HashSet<>();
-		}
-		this.values.addAll(vs);
-	}
+    public void addValues(int[] values) {
+        for (int v : values) {
+            addValue(v);
+        }
+    }
 
-	public Set<Integer> getValues() {
-		return values;
-	}
+//	public Set<Integer> getValues() {
+//		return values;
+//	}
+
+    public int[] getValues() {
+        return values;
+    }
 
 	public boolean isLeaf() {
-		return edges.isEmpty();
+//		return edges.isEmpty();
+        return edges.getChars().length == 0;
 	}
 
 	public GroupNode getGroupType1() {

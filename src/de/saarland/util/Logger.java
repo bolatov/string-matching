@@ -10,7 +10,7 @@ public class Logger {
 	static int indent = 0;
 	private Logger() {}
 
-	private static boolean ON = false;
+	private static boolean ON = true;
 	private static String filter = "GN";
 
 	public static void log(String tag, String msg) {

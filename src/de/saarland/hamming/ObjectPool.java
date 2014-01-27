@@ -64,7 +64,7 @@ public class ObjectPool {
 	}
 
 	public void destroyPairs() {
-		this.pairs.clear();
+//		this.pairs.clear();
 		this.pairs = null;
 	}
 
